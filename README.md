@@ -6,7 +6,7 @@ A Claude Code plugin marketplace for agent teams.
 | ------ | ---------- |
 | [`engineering-team`](plugins/engineering-team) | Engineering delivery: tech lead, ICs, independent code review, QA validation with a persistent test library, and a process analyst that proposes improvements to the team's own definitions. |
 
-The `plugins/` layout is deliberate — a `product-team`, `data-team` or any other roster drops in beside this one and installs independently.
+Other rosters — `product-team`, `data-team` — drop in beside this one and install independently.
 
 ## Install
 
@@ -55,11 +55,9 @@ tech-lead  ----------------------------------------------+   owns the plan, deco
 
 **Two things compound.** `qa-specialist` persists every test plan, script and fixture into `.claude/qa/` and reads that library before writing anything — so run N+1 is cheaper than run N. `agent-coach` reads captured telemetry about how the team actually worked and proposes edits to the team's own definitions, so the process itself improves instead of just the code.
 
-## The generic/specific split
+## What your project owns
 
-This is the design decision everything else follows from.
-
-Agent definitions are **installed plugin content**. A plugin update overwrites them. So nothing project-specific can live inside them — not your tracker's field IDs, not your dev server URL, not your ephemeral-environment tooling. All of it lives in one file your project owns:
+Agent definitions are installed plugin content, and a plugin update overwrites them, so nothing project-specific lives inside them — not your tracker's field IDs, not your dev server URL, not your ephemeral-environment tooling. All of it lives in one file your project owns:
 
 ```
 .claude/team/project.md
@@ -67,7 +65,7 @@ Agent definitions are **installed plugin content**. A plugin update overwrites t
 
 It records: what the software is, the tracker and its real MCP tool prefix, workflow state names, which fields carry acceptance criteria and validation instructions, branch and PR conventions, build/run/test/lint/typecheck commands, which environments exist and how to reset them, and how QA should exercise this particular kind of software.
 
-That last one matters more than it looks. **The team does not assume you're building a web app.** QA's execution mode is a project fact, not a team fact — a browser for a web UI, HTTP probes for a service, invocation for a CLI, a consumer harness for a library, migration-against-realistic-data for a data project, an emulator for mobile. `/init-team` detects what it can and asks about the rest.
+**The team does not assume you're building a web app.** QA's execution mode comes from the profile — a browser for a web UI, HTTP probes for a service, invocation for a CLI, a consumer harness for a library, migration-against-realistic-data for a data project, an emulator for mobile. `/init-team` detects what it can and asks about the rest.
 
 Two more directories your project owns, scaffolded by `/init-team`:
 
@@ -139,20 +137,12 @@ If that last path doesn't exist but a directory named after your project folder 
 
 **An IC's changes land in the wrong place.** `isolation: worktree` needs a git repo; in a non-repo directory the isolation silently doesn't apply.
 
-## Design notes
-
-**The process observer is a hook, not an agent.** An agent cannot watch another agent work — subagent conversations are isolated and never written to session transcripts (a scan of 181 local transcripts found zero sidechain records). Hooks *do* fire inside subagents and carry `agent_id` and `agent_type`. So capture is a hook: deterministic, zero-token, always on. Analysis is an agent that reads what was captured. "Parallel observer" becomes "continuous capture, periodic analyst."
-
-**`agent-coach` proposes and never applies.** Enforced by a `PreToolUse` guard that allows it to write only into `.claude/ops/reports/`, not by instruction alone. An agent that rewrites the definitions governing agents is an unbounded feedback loop, and prompt regressions are silent — you don't get a stack trace, you get worse work three sprints later.
-
-**Agents don't pin a `tools:` list.** Pinning one would mean naming your tracker's MCP tools, which differ per installation and fail silently when wrong. Agents inherit the session's tools; role boundaries use `disallowedTools` where they matter (`code-reviewer` cannot edit files) plus the coach's guard.
-
-More detail in [`plugins/engineering-team/README.md`](plugins/engineering-team/README.md).
-
 ## Contributing
 
-Agent definitions are prompts, and prompt changes regress silently. If you change one:
+If you change an agent definition:
 
-- Say what signal you expect to move. `agent-coach`'s report format exists to make that checkable.
-- Prefer deleting or tightening over appending. Every line in a definition is paid for on every run of that agent, forever.
+- Say what signal you expect to move.
+- Prefer deleting or tightening over appending.
 - Keep project-specific knowledge out of `agents/` — if it's true of one company's setup and not another's, it belongs in the `project.md` template or in `/init-team`'s interview.
+
+Internals are documented in [`plugins/engineering-team/README.md`](plugins/engineering-team/README.md).
