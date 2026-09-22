@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "PreToolUse": [
+      { "hooks": [{ "type": "command", "command": "node .claude/ops/guard.mjs" }] }
+    ],
+    "PostToolUseFailure": [
+      { "hooks": [{ "type": "command", "command": "node .claude/ops/capture.mjs" }] }
+    ],
+    "PermissionDenied": [
+      { "hooks": [{ "type": "command", "command": "node .claude/ops/capture.mjs" }] }
+    ],
+    "SubagentStart": [
+      { "hooks": [{ "type": "command", "command": "node .claude/ops/capture.mjs" }] }
+    ],
+    "SubagentStop": [
+      { "hooks": [{ "type": "command", "command": "node .claude/ops/capture.mjs" }] }
+    ],
+    "PreCompact": [
+      { "hooks": [{ "type": "command", "command": "node .claude/ops/capture.mjs" }] }
+    ],
+    "TaskCreated": [
+      { "hooks": [{ "type": "command", "command": "node .claude/ops/capture.mjs" }] }
+    ],
+    "TaskCompleted": [
+      { "hooks": [{ "type": "command", "command": "node .claude/ops/capture.mjs" }] }
+    ],
+    "StopFailure": [
+      { "hooks": [{ "type": "command", "command": "node .claude/ops/capture.mjs" }] }
+    ],
+    "SessionEnd": [
+      { "hooks": [{ "type": "command", "command": "node .claude/ops/capture.mjs" }] }
+    ]
+  }
+}

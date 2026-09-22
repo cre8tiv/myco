@@ -1,0 +1,10 @@
+# Run evidence: keep the written reports, not the heavy captures.
+*.png
+*.jpg
+*.jpeg
+*.webm
+*.mp4
+*.zip
+_artifacts/*
+!_artifacts/.gitkeep
+!.gitignore
