@@ -4,6 +4,7 @@
     "name": "cre8tiv",
     "url": "https://github.com/cre8tiv/myco"
   },
+  "description": "Agent teams for Claude Code, packaged as installable plugins.",
   "plugins": [
     {
       "name": "engineering-team",
