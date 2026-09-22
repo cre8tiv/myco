@@ -1,13 +1,17 @@
 #!/usr/bin/env node
 // Self-report sink. Any agent that hits process friction it can name appends here:
-//   node .claude/ops/friction.mjs --agent ic-generalist --kind instructions --note "..."
+//
+//   node "<plugin>/scripts/friction.mjs" --agent ic-generalist --kind instructions \
+//     --ticket ABC-123 --note "definition says run the test script but names none"
+//
 // kind: instructions | tooling | permissions | scope | environment | handoff
-// Hooks can see what an agent DID; only the agent knows its instructions were unclear.
-import { appendFileSync, mkdirSync } from 'node:fs';
-import { homedir } from 'node:os';
+//
+// Hooks can see what an agent DID; only the agent knows its instructions were
+// unclear. That makes this the highest-signal input the analyst gets.
+import { appendFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { streamDir } from './stream.mjs';
 
-const STREAM = 'myco';
 const a = process.argv.slice(2);
 const get = (f) => {
   const i = a.indexOf(f);
@@ -16,15 +20,15 @@ const get = (f) => {
 
 const note = get('--note');
 if (!note) {
-  console.error('usage: friction.mjs --agent <name> --kind <kind> --note "<what cost you time>" [--ticket KEY]');
+  console.error(
+    'usage: friction.mjs --agent <name> --kind <instructions|tooling|permissions|scope|environment|handoff> --note "<what cost you time>" [--ticket KEY]',
+  );
   process.exit(1);
 }
 
 try {
-  const dir = join(homedir(), '.claude', 'ops', STREAM);
-  mkdirSync(dir, { recursive: true });
   appendFileSync(
-    join(dir, 'friction.jsonl'),
+    join(streamDir(process.cwd()), 'friction.jsonl'),
     JSON.stringify({
       ts: new Date().toISOString(),
       agent: get('--agent') || 'unknown',

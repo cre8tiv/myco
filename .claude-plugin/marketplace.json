@@ -1,0 +1,14 @@
+{
+  "name": "myco",
+  "owner": {
+    "name": "cre8tiv",
+    "url": "https://github.com/cre8tiv/myco"
+  },
+  "plugins": [
+    {
+      "name": "engineering-team",
+      "source": "./plugins/engineering-team",
+      "description": "An agent team for engineering delivery: tech lead, ICs, independent code review, QA validation with a persistent test library, and a process analyst that proposes improvements to the team's own definitions."
+    }
+  ]
+}

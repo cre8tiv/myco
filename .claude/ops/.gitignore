@@ -1,3 +1,0 @@
-# The event stream lives in ~/.claude/ops/myco/ and is never committed.
-# Reports are the durable artifact and ARE committed.
-*.jsonl
