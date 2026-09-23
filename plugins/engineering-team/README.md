@@ -41,6 +41,15 @@ Agents don't pin a `tools:` list — a pinned list would have to name the host's
 
 **The limit:** an agent with `Bash` can still write files through the shell. The guard covers the coach's mutating shell commands; for `code-reviewer` the boundary is the frontmatter plus its instructions. Tighten further in project settings if your situation calls for it.
 
+## Merge policy
+
+`merge_policy` in the profile frontmatter, enforced by `scripts/guard.mjs`:
+
+- **`human-approval`** (the default, and what a missing profile resolves to) — no agent may complete a merge. `gh pr merge`, `az repos pr ... completed`, and a direct push to `trunk_branch` are blocked. The lead hands off instead: PR summary comment, review request to the named human, notification, ticket left in its review state.
+- **`autonomous`** — agents may merge once every gate is green.
+
+The gate keys on `agent_type`, so a human working in the main session is never blocked — it gates autonomous merges, not the person who asked for one. It is deliberately narrow: `git merge origin/main` into a feature branch, pushing a feature branch, and opening a PR all stay allowed, because that is how an IC keeps its worktree current.
+
 ## Observability
 
 | Layer | Mechanism | Cost |

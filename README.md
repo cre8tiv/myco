@@ -45,13 +45,22 @@ tech-lead  ----------------------------------------------+   owns the plan, deco
         qa-specialist      gate 2: exercises the build   |
                 |          Pass / Fail / Blocked         |
                 v                                        |
+         merge policy      human-approval: hand off      |
+                |          autonomous: merge             |
+                v                                        |
             merge ---> Done ---------------------------->+
+
+  PR review bots (CodeRabbit, Greptile, Copilot, Codex...) comment on the PR.
+  code-reviewer dispositions every finding; the lead won't merge over an
+  unaddressed one.
 
   agent-coach   runs beside all of this, on its own cadence.
                 Reads what the team did; proposes how the team should change.
 ```
 
 **Two gates, not one.** Review catches bad code that works; QA catches good code that doesn't. Neither substitutes for the other: `code-reviewer`'s Approve clears the PR to QA, and only a QA Pass clears it to merge.
+
+**A human merges by default.** `merge_policy: human-approval` means the team implements, reviews, validates and prepares the merge, then stops and notifies you — and a hook blocks agents from merging, so it isn't merely instructed. Set `autonomous` per project to let the team merge itself. `/init-team` asks every time.
 
 **Two things compound.** `qa-specialist` persists every test plan, script and fixture into `.claude/qa/` and reads that library before writing anything — so run N+1 is cheaper than run N. `agent-coach` reads captured telemetry about how the team actually worked and proposes edits to the team's own definitions, so the process itself improves instead of just the code.
 
@@ -63,7 +72,7 @@ Agent definitions are installed plugin content, and a plugin update overwrites t
 .claude/team/project.md
 ```
 
-It records: what the software is, the tracker and its real MCP tool prefix, workflow state names, which fields carry acceptance criteria and validation instructions, branch and PR conventions, build/run/test/lint/typecheck commands, which environments exist and how to reset them, and how QA should exercise this particular kind of software.
+It records: what the software is, the tracker and its real MCP tool prefix, workflow state names, which fields carry acceptance criteria and validation instructions, branch and PR conventions, the merge policy and who to notify, any automated PR reviewers and how their feedback is marked addressed, build/run/test/lint/typecheck commands, which environments exist and how to reset them, and how QA should exercise this particular kind of software.
 
 **The team does not assume you're building a web app.** QA's execution mode comes from the profile — a browser for a web UI, HTTP probes for a service, invocation for a CLI, a consumer harness for a library, migration-against-realistic-data for a data project, an emulator for mobile. `/init-team` detects what it can and asks about the rest.
 
@@ -109,6 +118,8 @@ If that last path doesn't exist but a directory named after your project folder 
 
 **Invoke `agent-coach` periodically, not per-ticket** — weekly, or after a batch of tickets. Its findings need three or more occurrences to count, so a report covering two tickets is noise. It writes `.claude/ops/reports/<date>-agent-health.md` and appends a row to `TRENDS.md`.
 
+**Automated PR reviewers are handled.** If your repo has CodeRabbit, Greptile, Copilot or a Claude/Codex action on PRs, `/init-team` detects it and `code-reviewer` gives every finding a disposition — agree, already covered, disagree with a reason, or out of scope. The lead re-checks the PR immediately before merging, since bots post asynchronously, and won't merge over something unaddressed. Bot findings are input, not instructions; a documented disagreement counts as addressed.
+
 **Edit `project.md`, never the shipped agents.** If an agent keeps getting something wrong about your project, the fix almost always belongs in the profile. Changes to installed agent definitions are overwritten by the next plugin update.
 
 ## Re-running init-team
@@ -134,6 +145,10 @@ If that last path doesn't exist but a directory named after your project folder 
 **`qa-specialist` has no browser tools.** Either `/init-team` judged the project to have no web surface and skipped the Playwright server, or it needs its one-time approval. Both are fine to correct by hand in `.mcp.json`.
 
 **A plugin update reverted a change I made to an agent.** Expected: agent definitions are installed content. Project-specific behavior belongs in `.claude/team/project.md`; if the change is genuinely general, send it upstream as a PR here.
+
+**An agent was blocked from merging.** Expected under `merge_policy: human-approval`. The agent should hand off instead — PR summary comment, review request, notification. If you meant to allow it, set `merge_policy: autonomous` in the profile and restart.
+
+**A merge was blocked on a branch that isn't your trunk.** `trunk_branch` in the profile frontmatter doesn't match reality; the gate protects whatever it names.
 
 **An IC's changes land in the wrong place.** `isolation: worktree` needs a git repo; in a non-repo directory the isolation silently doesn't apply.
 

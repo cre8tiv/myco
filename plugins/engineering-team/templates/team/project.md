@@ -5,6 +5,11 @@
 stream: <short-slug-for-this-project>
 project_type: <web | api | cli | library | mobile | desktop | data | mixed>
 ticket_system: <jira | github | linear | azure-devops | none>
+# merge_policy is ENFORCED by a hook, not just read as guidance:
+#   human-approval  agents prepare the merge and hand off; a human merges. (default)
+#   autonomous      agents may merge once both gates are green.
+merge_policy: <human-approval | autonomous>
+trunk_branch: <main>
 generated: <YYYY-MM-DD>
 ---
 
@@ -29,10 +34,37 @@ transitions and report status only to the lead.
 
 ## Branch and PR conventions
 
-- **Trunk / target branch:** <main>
+- **Trunk / target branch:** <main> (keep in sync with `trunk_branch` above)
 - **Branch pattern:** <e.g. feature/<TICKET>-short-description>
 - **PR tool:** <gh | az repos | web UI>
 - **Commit convention:** <e.g. conventional commits, or "none">
+
+## External PR review
+
+Automated reviewers that comment on PRs in this repo, independently of this agent
+team. Their feedback is input to `code-reviewer`, and the tech lead does not merge
+while any of it is unaddressed.
+
+| Reviewer | How it's triggered | Typical latency | Approval a required check? |
+| -------- | ------------------ | --------------- | -------------------------- |
+| <e.g. CodeRabbit> | <on PR open / on push / on comment> | <~2 min> | <yes / no> |
+
+- **How to see their feedback:** <e.g. `gh pr view <n> --json reviews,comments`, or the PR page>
+- **How to mark a comment addressed:** <reply in thread / resolve the thread / a keyword the bot recognizes>
+- **Known noise:** <findings this tool reliably gets wrong on this codebase, so nobody re-litigates them every PR>
+
+If this repo has no automated PR reviewers, say so here and the team will skip the step.
+
+## Human approval and notification
+
+- **Merge policy:** <human-approval | autonomous> — must match `merge_policy` above.
+- **Who approves:** <GitHub/ADO handle to request review from>
+- **Notify via:** <the exact mechanism: an MCP tool and channel, a PR review request, or "report in session only">
+- **What the notification should contain:** <PR link, review verdict, QA verdict, what to look at first>
+
+Even under `autonomous`, escalate to a human rather than merging when the change
+touches: <auth, permissions, billing, customer data, migrations, public API contracts,
+infrastructure — edit this list to fit the project>.
 
 ## Build and run
 
