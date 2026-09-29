@@ -1,0 +1,25 @@
+---
+name: log-friction
+description: Record process friction an agent hit — its own instructions were unclear or silent, a tool it needed wasn't available, a task arrived too vague to scope, or a handoff lost information — so agent-coach can find patterns across runs. Use when something about how you were asked to work cost you time. Not for ordinary product bugs.
+---
+
+# log-friction
+
+Run this once per incident, then carry on with your work:
+
+```sh
+node "${CLAUDE_PLUGIN_ROOT}/scripts/friction.mjs" --agent <your agent name> --kind <kind> --note "<what cost you time, one sentence>" --ticket <ticket key or design package slug, if there is one>
+```
+
+`<kind>` is one of:
+
+- `instructions` — your own definition was wrong, unclear, or silent about the situation.
+- `tooling` — a tool you needed was missing, broken, or unavailable.
+- `permissions` — you were blocked by a permission prompt or allowlist.
+- `scope` — the task was too big or too vague to do well.
+- `environment` — build, infrastructure, credentials, or a service that wasn't running.
+- `handoff` — information was lost or contradicted between agents or teams. This includes design problems engineering sends back to a design package.
+
+Write the note so someone reading it next month understands what happened without the rest of your context: name the step, the thing that was missing or unclear, and what you did instead.
+
+Don't stop work to log, and don't log the same incident twice. If the command fails, mention it in your report and continue — telemetry never blocks delivery.

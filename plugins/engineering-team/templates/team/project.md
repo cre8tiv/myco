@@ -125,15 +125,3 @@ on when to use each. Leave empty if none.>
 
 <Anything that has bitten someone: shell quirks, required env vars, a service that must
 be running, a test that's slow, a directory that must never be edited directly.>
-
-## Process friction logging
-
-Agents log process friction with this exact command:
-
-```sh
-node "<absolute path to plugin>/scripts/friction.mjs" --agent <agent-name> \
-  --kind instructions|tooling|permissions|scope|environment|handoff \
-  --ticket <KEY> --note "<what cost you time>"
-```
-
-`agent-coach` reads those entries alongside the captured hook events.

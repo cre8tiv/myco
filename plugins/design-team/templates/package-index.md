@@ -12,6 +12,7 @@ This becomes `docs/design/<slug>/README.md`: the first file anyone opens, and th
 | **Status** | <Framing | Drafting | In decision loop | Ready for engineering> |
 | **Owner** | <name> |
 | **Last updated** | <date> |
+| **Adopted from** | <source link, its version or date, and when it was fetched — or "new"> |
 
 <One paragraph: what this is and why, from the PRD's problem and positioning.>
 ```
@@ -27,6 +28,10 @@ Table with columns `Document | Author | Status | Open questions`. List only the 
 | [Security review](security-review.md) | security-reviewer | | |
 | [Tech design](tech-design.md) | tech-designer | | |
 | [UX](ux.md) | ux-designer | | |
+
+**Prototypes:** one line per prototype — surface, link or `ux/` path, and whether it has been published.
+
+**Published copies:** one line per destination — where, link, date, and the version published.
 
 ## Readiness
 
@@ -55,7 +60,7 @@ To start:
 
 ```
 claude --agent engineering-team:tech-lead
-> Implement phase 1 of docs/design/<slug>/
+> Implement phase 1 of <packages_dir>/<slug>/
 ```
 
 ## Change log

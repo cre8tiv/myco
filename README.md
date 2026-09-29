@@ -5,7 +5,8 @@ A Claude Code plugin marketplace for agent teams.
 | Plugin | What it is |
 | ------ | ---------- |
 | [`design-team`](plugins/design-team) | From idea to a decided design package: product lead, architect, security reviewer, tech designer, UX designer. Produces the PRD, architecture, security review, tech design and UX that engineering builds from. |
-| [`engineering-team`](plugins/engineering-team) | Engineering delivery: tech lead, ICs, independent code review, QA validation with a persistent test library, and a process analyst that proposes improvements to the team's own definitions. |
+| [`engineering-team`](plugins/engineering-team) | Engineering delivery: tech lead, ICs, independent code review, QA validation with a persistent test library, and an enforced human merge gate. |
+| [`team-ops`](plugins/team-ops) | Observability for every team: hook capture, a friction-reporting skill for agents, and `agent-coach`, which analyzes how the teams work — including handoffs between them — and proposes improvements. Installed automatically with either team. |
 
 Each plugin installs and works independently. Together they cover idea to merged code:
 
@@ -27,10 +28,13 @@ The package directory is the only contract between them; they share no code.
 /plugin marketplace add cre8tiv/myco
 /plugin install design-team@myco          # optional
 /plugin install engineering-team@myco
+/init-design                              # if you installed design-team
 /init-team
 ```
 
-The design team needs no setup step — the product lead asks the few things it needs the first time, and records them in `.claude/team/design.md`. See [`plugins/design-team/README.md`](plugins/design-team/README.md).
+`team-ops` comes with either team; you don't install it yourself. If you're updating an engineering-team install from before team-ops existed, run `/reload-plugins` after updating so the new dependency is installed.
+
+Each team has one setup skill that profiles your project and writes the config its agents read — `/init-design` for where design work lives and gets published, `/init-team` for how the code is built, tested and merged. See [`plugins/design-team/README.md`](plugins/design-team/README.md).
 
 For the engineering team, `/init-team` is the part that matters. The agents ship generic; that skill profiles your project — stack, test commands, tracker, environments — and writes the one config file the agents read. Without it they'll tell you they're unconfigured rather than guess at your workflow.
 
@@ -38,7 +42,7 @@ To try it before installing:
 
 ```sh
 git clone https://github.com/cre8tiv/myco
-claude --plugin-dir myco/plugins/engineering-team
+claude --plugin-dir myco/plugins        # loads every plugin, dependencies included
 ```
 
 ## What you get
@@ -104,17 +108,20 @@ Two more directories your project owns, scaffolded by `/init-team`:
 
 ## Verify the install
 
-`/init-team` runs these at the end, but they're worth knowing by hand. `<plugin>` is the installed plugin directory — `/plugin` will show you where it landed.
+`/init-team` and `/init-design` run checks like these at the end, but they're worth knowing by hand. `<team-ops>` and `<engineering-team>` are the installed plugin directories — `/plugin` shows where they landed.
 
 ```sh
-# the guard enforces agent-coach's propose-only mandate (expect exit 2)
-echo '{"agent_type":"engineering-team:agent-coach","tool_name":"Write","tool_input":{"file_path":".claude/team/project.md"}}' | node "<plugin>/scripts/guard.mjs"; echo "exit=$?"
+# the coach guard enforces agent-coach's propose-only mandate (expect exit 2)
+echo '{"agent_type":"team-ops:agent-coach","tool_name":"Write","tool_input":{"file_path":".claude/team/project.md"}}' | node "<team-ops>/scripts/coach-guard.mjs"; echo "exit=$?"
 
 # ...and leaves every other agent alone (expect exit 0)
-echo '{"agent_type":"engineering-team:tech-lead","tool_name":"Edit","tool_input":{"file_path":"src/app.ts"}}' | node "<plugin>/scripts/guard.mjs"; echo "exit=$?"
+echo '{"agent_type":"engineering-team:tech-lead","tool_name":"Edit","tool_input":{"file_path":"src/app.ts"}}' | node "<team-ops>/scripts/coach-guard.mjs"; echo "exit=$?"
 
-# self-reporting works, and resolves the stream from your project profile
-node "<plugin>/scripts/friction.mjs" --agent init-team --kind tooling --note "smoke test"
+# the merge gate matches merge_policy: human-approval -> 2, autonomous -> 0
+echo '{"agent_type":"engineering-team:tech-lead","tool_name":"Bash","cwd":"'"$PWD"'","tool_input":{"command":"gh pr merge 1"}}' | node "<engineering-team>/scripts/merge-gate.mjs"; echo "exit=$?"
+
+# self-reporting works, and resolves the stream from your profile
+node "<team-ops>/scripts/friction.mjs" --agent smoke-test --kind tooling --note "smoke test"
 
 # after a session or two of real work, telemetry is accumulating
 wc -l ~/.claude/ops/<your-stream>/events.jsonl

@@ -15,6 +15,11 @@
       "name": "design-team",
       "source": "./plugins/design-team",
       "description": "Takes an idea to a decided design package — PRD, architecture, security review, tech design, and UX — ready to hand to an engineering team. A product lead owns the conversation and the decision loop; specialists write their documents and return questions to it."
+    },
+    {
+      "name": "team-ops",
+      "source": "./plugins/team-ops",
+      "description": "Observability for agent teams: hook capture, a friction-reporting skill for agents, and agent-coach, which analyzes how every installed team works and proposes improvements. Installed automatically as a dependency of the team plugins."
     }
   ]
 }

@@ -11,11 +11,18 @@ permission_denials: 0
 compactions: 0
 task_created: 0
 task_completed: 0
+# engineering team — 0 when it had no activity in the window
 review_request_changes: 0
 review_approved: 0
 qa_fail: 0
 qa_pass: 0
 friction_reports: 0
+# design team — 0 when it had no activity in the window
+design_packages_ready: 0
+design_decisions_superseded: 0
+design_specialist_rework: 0
+# between teams: design problems engineering routed back to a package
+handoff_design_issues: 0
 proposals: 0
 proposals_net_lines: 0
 prior_report: null
@@ -41,6 +48,17 @@ The quality baseline this window is measured against. Rates, not just counts.
 | QA: Fail rate | | | |
 | Runs hitting compaction | | | |
 | Tool-failure rate per subagent run | | | |
+
+## Design and handoffs
+
+Only if the design team had activity. Packages worked on this window, rounds to Ready,
+decisions superseded, specialist documents sent back, and every design problem
+engineering routed back to a package — with the package slug and the requirement,
+control or ADR it concerned.
+
+| Package | Status | Rounds | Superseded | Rework | Routed back from engineering |
+| ------- | ------ | ------ | ---------- | ------ | ---------------------------- |
+| | | | | | |
 
 ## Friction by agent
 

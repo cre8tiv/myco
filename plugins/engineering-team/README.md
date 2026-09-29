@@ -1,6 +1,6 @@
 # engineering-team
 
-A delivery agent team with two quality gates and a self-improvement loop.
+A delivery agent team with two quality gates and an enforced human merge gate.
 
 | Agent | Role | Isolation | Writes code? |
 | ----- | ---- | --------- | ------------ |
@@ -9,9 +9,10 @@ A delivery agent team with two quality gates and a self-improvement loop.
 | `ic-specialist-backend` | Same, with backend/schema/API defaults | git worktree | Yes |
 | `code-reviewer` | Independent review of the diff | — | No (enforced) |
 | `qa-specialist` | Test plans + execution against a running build | git worktree | Tests only |
-| `agent-coach` | Observability and efficiency of the team itself | — | Reports only (enforced) |
 
 Plus one skill, `/init-team`, which profiles the host project and writes the config the agents read.
+
+Depends on [`team-ops`](../team-ops), installed automatically, which captures how the team works and provides `agent-coach` to analyze it.
 
 ## The contract with the host project
 
@@ -19,74 +20,61 @@ The agents ship **generic**. Everything project-specific lives in one file the h
 
 ```
 .claude/team/project.md      <- tracker, field IDs, states, branch/PR conventions,
+                                merge policy, automated PR reviewers,
                                 build & run commands, verification commands,
                                 environments, how QA exercises this software
 ```
 
 Every agent reads it on dispatch. Agent definitions are installed plugin content that a plugin update overwrites, so nothing project-specific can live in them. `/init-team` generates the file; a human edits it thereafter.
 
-Two further project-owned directories, scaffolded by `/init-team`:
+`/init-team` also scaffolds the QA library the `qa-specialist` builds up over time:
 
 ```
-.claude/qa/                  <- the QA library: plans, scripts, fixtures, run evidence
-.claude/ops/reports/         <- agent-coach's dated reports + TRENDS.md
+.claude/qa/                  <- plans, scripts, fixtures, run evidence
 ```
+
+## Starting from a design package
+
+If the `design-team` plugin produced a package for the work, point the tech lead at it:
+
+```sh
+claude --agent engineering-team:tech-lead
+> Implement phase 1 of docs/design/<slug>/
+```
+
+It reads the package index first, decomposes from the tech design's delivery slices, keeps requirement IDs in tickets, and carries security controls and UX states through as acceptance criteria. Design problems found during implementation are raised against the package — and logged, so the design team sees what its packages cost engineering.
 
 ## Tools and role boundaries
 
 Agents don't pin a `tools:` list — a pinned list would have to name the host's tracker MCP tools, which differ per installation. Agents inherit the session's tools, and role boundaries are enforced where they matter:
 
 - `code-reviewer` — `disallowedTools: Edit, Write, NotebookEdit`. It reviews; the IC fixes.
-- `agent-coach` — `disallowedTools: Edit, NotebookEdit`, plus a `PreToolUse` guard restricting its writes to `.claude/ops/reports/`.
 
-**The limit:** an agent with `Bash` can still write files through the shell. The guard covers the coach's mutating shell commands; for `code-reviewer` the boundary is the frontmatter plus its instructions. Tighten further in project settings if your situation calls for it.
+**The limit:** an agent with `Bash` can still write files through the shell. For `code-reviewer` the boundary is the frontmatter plus its instructions. Tighten further in project settings if your situation calls for it.
 
 ## Merge policy
 
-`merge_policy` in the profile frontmatter, enforced by `scripts/guard.mjs`:
+`merge_policy` in the profile frontmatter, enforced by `scripts/merge-gate.mjs`:
 
 - **`human-approval`** (the default, and what a missing profile resolves to) — no agent may complete a merge. `gh pr merge`, `az repos pr ... completed`, and a direct push to `trunk_branch` are blocked. The lead hands off instead: PR summary comment, review request to the named human, notification, ticket left in its review state.
 - **`autonomous`** — agents may merge once every gate is green.
 
-The gate keys on `agent_type`, so a human working in the main session is never blocked — it gates autonomous merges, not the person who asked for one. It is deliberately narrow: `git merge origin/main` into a feature branch, pushing a feature branch, and opening a PR all stay allowed, because that is how an IC keeps its worktree current.
+The gate keys on `agent_type`, so a human working in a plain session is never blocked — it gates autonomous merges, not the person who asked for one. It is deliberately narrow: `git merge origin/main` into a feature branch, pushing a feature branch, and opening a PR all stay allowed, because that is how an IC keeps its worktree current.
 
-## Observability
-
-| Layer | Mechanism | Cost |
-| ----- | --------- | ---- |
-| Capture | `scripts/capture.mjs`, wired via `hooks/hooks.json` | zero tokens, one short-lived process per event |
-| Self-report | agents call `scripts/friction.mjs` on friction they can name | one line per incident |
-| Analysis | `agent-coach`, invoked periodically | one report |
-
-Capture is a hook rather than an agent because hooks fire inside subagents and carry `agent_id` and `agent_type`, which nothing else does — subagent conversations are isolated and aren't written to session transcripts. So the coach can attribute every captured event to the agent that produced it, but sees inside an IC only through this stream and the self-reports.
-
-**Captured events:** `PostToolUseFailure`, `PermissionDenied`, `SubagentStart`, `SubagentStop`, `PreCompact`, `TaskCreated`, `TaskCompleted`, `StopFailure`, `SessionEnd`. Successful tool calls are excluded — a process per tool call across every agent for marginal signal. Add `PostToolUse` to `hooks/hooks.json` temporarily for a full census. `SubagentStop` carries `last_assistant_message`, each agent's own final report, which is the richest field in the stream.
-
-**Where the stream lives:** `~/.claude/ops/<stream>/`, outside the host repo, so worktrees converge on one stream instead of one each. `scripts/stream.mjs` resolves the name from `stream:` in `.claude/team/project.md`, walking up from the working directory — **the profile must be committed** or each worktree falls back to its own directory name.
-
-Reports, by contrast, are committed to the host repo. Their git history is what lets the coach attribute a change in outcomes to a change in a definition or in config.
-
-## Propose-only, enforced
-
-`scripts/guard.mjs` runs on `PreToolUse` with an allowlist: `agent-coach` may write into `.claude/ops/reports/` and scratch locations, and nothing else. It reads everything — agent definitions, transcripts, git history, project config — and argues for changes in a report a human applies.
-
-The guard fails open: any internal error exits 0 rather than blocking legitimate work.
+The gate covers `gh`, `az repos` and direct trunk pushes. It's a guardrail against forgetting, not a security boundary — an agent calling a hosting API another way isn't caught.
 
 ## Files
 
 ```
-agents/                  six definitions, generic
+agents/                  five definitions, generic
 skills/init-team/        the setup interview
-hooks/hooks.json         capture + guard wiring, via ${CLAUDE_PLUGIN_ROOT}
+hooks/hooks.json         merge-gate wiring, via ${CLAUDE_PLUGIN_ROOT}
 scripts/
-  stream.mjs             resolves stream name and directory
-  capture.mjs            hook sink
-  friction.mjs           agent self-report CLI
-  guard.mjs              propose-only enforcement
+  merge-gate.mjs         merge policy enforcement
+  profile.mjs            reads the project profile's frontmatter
 templates/
   team/project.md        the profile /init-team fills in
   qa/                    QA library scaffold
-  ops/reports/           report TEMPLATE.md + TRENDS.md
 ```
 
 No `.mcp.json` ships with the plugin. `/init-team` adds a Playwright server to the host project's `.mcp.json` only when the project actually has a web surface — a SQL or CLI project shouldn't launch a browser server every session.

@@ -66,7 +66,6 @@ Copy `${CLAUDE_PLUGIN_ROOT}/templates/team/project.md` to `.claude/team/project.
 
 - **Every placeholder gets replaced or removed.** A profile shipped with `<command>` still in it is worse than no profile — an agent will read it as literal.
 - **Commands must be the real, runnable ones.** Verify each by running it if it's safe and fast (`lint`, `typecheck`, `--version`); don't run a full suite or anything destructive just to check. Say in your summary which ones you actually verified and which you took on trust.
-- **Fill the friction command with the absolute path** to `${CLAUDE_PLUGIN_ROOT}/scripts/friction.mjs`, resolved — agents can't expand the variable themselves.
 - **Keep the frontmatter keys exactly as templated.** Three are read by hooks, not just by agents:
   - `stream` — which event stream this project writes to. Missing or renamed, telemetry silently goes to a directory named after the working directory.
   - `merge_policy` — **enforced.** Anything other than `autonomous` blocks agents from completing a merge. Missing means gated, which is the safe failure.
@@ -77,12 +76,11 @@ Copy `${CLAUDE_PLUGIN_ROOT}/templates/team/project.md` to `.claude/team/project.
 ## 5. Scaffold the directories
 
 ```sh
-mkdir -p .claude/qa .claude/ops/reports
-cp -r "${CLAUDE_PLUGIN_ROOT}/templates/qa/."          .claude/qa/
-cp -r "${CLAUDE_PLUGIN_ROOT}/templates/ops/reports/." .claude/ops/reports/
+mkdir -p .claude/qa
+cp -r "${CLAUDE_PLUGIN_ROOT}/templates/qa/." .claude/qa/
 ```
 
-Don't overwrite an existing `.claude/qa/INDEX.md` or any accumulated plans, scripts or reports — those are the project's own assets. On a refresh, add only what's missing.
+Don't overwrite an existing `.claude/qa/INDEX.md` or any accumulated plans or scripts — those are the project's own assets. (`agent-coach`'s reports directory is created by `team-ops` on first use; nothing to scaffold here.) On a refresh, add only what's missing.
 
 Then make sure the project's `.gitignore` keeps the heavy and machine-local things out while keeping the assets in:
 
@@ -118,33 +116,23 @@ For a project with no web surface, skip this entirely — don't make a SQL or CL
 ## 7. Verify and hand off
 
 ```sh
-# the guard enforces agent-coach's propose-only mandate (expect exit 2)
-echo '{"agent_type":"engineering-team:agent-coach","tool_name":"Write","tool_input":{"file_path":".claude/team/project.md"}}' | node "${CLAUDE_PLUGIN_ROOT}/scripts/guard.mjs"; echo "exit=$?"
-
-# ...and leaves everyone else alone (expect exit 0)
-echo '{"agent_type":"engineering-team:tech-lead","tool_name":"Edit","tool_input":{"file_path":"src/app.ts"}}' | node "${CLAUDE_PLUGIN_ROOT}/scripts/guard.mjs"; echo "exit=$?"
-
-# self-reporting works and resolves the stream from the profile you just wrote
-node "${CLAUDE_PLUGIN_ROOT}/scripts/friction.mjs" --agent init-team --kind tooling --note "init-team smoke test"
-tail -1 ~/.claude/ops/<stream>/friction.jsonl
-
 # the merge gate matches the policy you just recorded
 #   human-approval -> exit 2   |   autonomous -> exit 0
-echo '{"agent_type":"engineering-team:tech-lead","tool_name":"Bash","cwd":"'"$PWD"'","tool_input":{"command":"gh pr merge 1"}}' | node "${CLAUDE_PLUGIN_ROOT}/scripts/guard.mjs"; echo "exit=$?"
+echo '{"agent_type":"engineering-team:tech-lead","tool_name":"Bash","cwd":"'"$PWD"'","tool_input":{"command":"gh pr merge 1"}}' | node "${CLAUDE_PLUGIN_ROOT}/scripts/merge-gate.mjs"; echo "exit=$?"
 
 # ...and an IC keeping its branch current is never blocked (expect exit 0)
-echo '{"agent_type":"engineering-team:ic-generalist","tool_name":"Bash","cwd":"'"$PWD"'","tool_input":{"command":"git merge origin/main"}}' | node "${CLAUDE_PLUGIN_ROOT}/scripts/guard.mjs"; echo "exit=$?"
+echo '{"agent_type":"engineering-team:ic-generalist","tool_name":"Bash","cwd":"'"$PWD"'","tool_input":{"command":"git merge origin/main"}}' | node "${CLAUDE_PLUGIN_ROOT}/scripts/merge-gate.mjs"; echo "exit=$?"
 ```
 
 Run the merge-gate check and **say the result out loud to the user** — it's the one place where a typo in the profile silently changes how much autonomy the team has.
 
-If the last command writes to a directory that isn't your configured stream name, `stream:` in the profile isn't being read — check the frontmatter.
+Then confirm telemetry resolves to the stream you just configured: invoke the `team-ops:log-friction` skill once with kind `tooling` and the note "init-team smoke test", and check the entry landed in `~/.claude/ops/<stream>/friction.jsonl`. If it landed in a directory named after the working directory instead, `stream:` in the profile isn't being read — check the frontmatter.
 
 Then tell the user, briefly:
 
 1. **What you detected and what you asked** — so they can spot a wrong inference.
 2. **Which commands you verified by running** vs. took on trust.
-3. **What to commit**: `.claude/team/project.md`, the `.claude/qa/` scaffold, `.claude/ops/reports/` templates, and `.mcp.json` if you touched it.
+3. **What to commit**: `.claude/team/project.md`, the `.claude/qa/` scaffold, and `.mcp.json` if you touched it.
 4. **What's next**: hand a goal or ticket to `tech-lead`; invoke `agent-coach` after a week or a batch of tickets, not today — it needs traffic before its three-occurrence threshold means anything.
 5. **The merge policy in plain words** — "agents will/won't merge without you, and here's how you'll be told" — plus the verified gate result.
 6. **Anything you deliberately left blank** and what would fill it in.
