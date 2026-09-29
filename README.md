@@ -4,19 +4,35 @@ A Claude Code plugin marketplace for agent teams.
 
 | Plugin | What it is |
 | ------ | ---------- |
+| [`design-team`](plugins/design-team) | From idea to a decided design package: product lead, architect, security reviewer, tech designer, UX designer. Produces the PRD, architecture, security review, tech design and UX that engineering builds from. |
 | [`engineering-team`](plugins/engineering-team) | Engineering delivery: tech lead, ICs, independent code review, QA validation with a persistent test library, and a process analyst that proposes improvements to the team's own definitions. |
 
-Other rosters — `product-team`, `data-team` — drop in beside this one and install independently.
+Each plugin installs and works independently. Together they cover idea to merged code:
+
+```
+  claude --agent design-team:product-lead        claude --agent engineering-team:tech-lead
+  ---------------------------------------        -----------------------------------------
+  frame > ground > recommend > PRD               decompose > implement > review > QA > merge
+     architect | ux > security > tech design
+                        |
+                        v
+            docs/design/<slug>/  ------ handoff ------>  tickets, traced by requirement ID
+```
+
+The package directory is the only contract between them; they share no code.
 
 ## Install
 
 ```
 /plugin marketplace add cre8tiv/myco
+/plugin install design-team@myco          # optional
 /plugin install engineering-team@myco
 /init-team
 ```
 
-`/init-team` is the part that matters. The agents ship generic; that skill profiles your project — stack, test commands, tracker, environments — and writes the one config file the agents read. Without it they'll tell you they're unconfigured rather than guess at your workflow.
+The design team needs no setup step — the product lead asks the few things it needs the first time, and records them in `.claude/team/design.md`. See [`plugins/design-team/README.md`](plugins/design-team/README.md).
+
+For the engineering team, `/init-team` is the part that matters. The agents ship generic; that skill profiles your project — stack, test commands, tracker, environments — and writes the one config file the agents read. Without it they'll tell you they're unconfigured rather than guess at your workflow.
 
 To try it before installing:
 
