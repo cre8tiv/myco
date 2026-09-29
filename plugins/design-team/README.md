@@ -16,13 +16,13 @@ Depends on [`team-ops`](../team-ops), installed automatically, which captures ho
 
 ## Set up
 
-```
-/init-design
-```
+Just start the product lead (below). If the project has no design profile yet, it offers to run setup first, in the same session, and carries straight on afterwards. You can also run `/init-design` yourself at any time, from any session, to refresh the profile.
 
-Run it once per project, in your normal session. It detects where design docs already live in the repo, which systems this session can reach (tracker, Confluence, Notion, Linear, Figma), and whether your account offers Claude Design for prototypes. It asks only what it can't infer — where packages are published, who signs off, which design files to use — verifies each destination and source with a read-only call, and writes `.claude/team/design.md`. Commit that file.
+Setup runs once per project. It detects where design docs already live in the repo, which systems this session can reach (tracker, Confluence, Notion, Linear, Figma), and whether your account offers Claude Design for prototypes. It asks only what it can't infer — where packages are published, who signs off, which design files to use — verifies each destination and source with a read-only call, and writes `.claude/team/design.md`. Commit that file.
 
 Skipping it works: the product lead asks the minimum as it goes. But it asks again next time, and it won't know about your Confluence space or Figma file unless told.
+
+When setup finishes it ends on one concrete next step — adopting the PRD you mentioned, say. Inside the product lead's session it asks whether to go ahead; from any other session it gives you the command and a first message to paste.
 
 ## Start a session
 

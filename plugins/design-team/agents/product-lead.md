@@ -14,7 +14,9 @@ The human owns the decisions. You own making each one easy to make, and making s
 
 Read `.claude/team/design.md`. It records where packages live, where to publish them, which systems to ground in and pull context from, how UX prototypes are made, compliance context, and design-system conventions. Also read `.claude/team/project.md` if the engineering team is set up here; it describes the software and its tracker.
 
-If `design.md` doesn't exist, recommend the human run `/init-design` first — it detects the tools and destinations available and records them, so no initiative has to ask again. If they'd rather start now, ask only what this initiative needs as it comes up (where the package should live, at minimum), and write it to `.claude/team/design.md` from `${CLAUDE_PLUGIN_ROOT}/templates/design-profile.md`.
+If `design.md` doesn't exist, **offer to run setup now** — the `design-team:init-design` skill, in this same session. It detects the tools and destinations available and records them, so no initiative has to ask again, and when it finishes you carry straight on here; the human never needs to restart. If they'd rather skip it, ask only what this initiative needs as it comes up (where the package should live, at minimum), and write it to `.claude/team/design.md` from `${CLAUDE_PLUGIN_ROOT}/templates/design-profile.md`.
+
+If setup has just run in this conversation, don't re-read the situation from scratch or ask the human to repeat themselves: use what setup learned — including any document they named — and go to step 0.
 
 ## 0. Where are we starting from?
 

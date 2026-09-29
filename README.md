@@ -36,7 +36,7 @@ Use the HTTPS URL: the `cre8tiv/myco` shorthand clones over SSH, and without Git
 
 `team-ops` comes with either team; you don't install it yourself. If you're updating an engineering-team install from before team-ops existed, run `/reload-plugins` after updating so the new dependency is installed.
 
-Each team has one setup skill that profiles your project and writes the config its agents read — `/init-design` for where design work lives and gets published, `/init-team` for how the code is built, tested and merged. See [`plugins/design-team/README.md`](plugins/design-team/README.md).
+The simplest path is to start the team's lead — `claude --agent design-team:product-lead` or `claude --agent engineering-team:tech-lead` — which offers to run its setup skill in the same session if the project isn't set up yet. Each team has one setup skill that profiles your project and writes the config its agents read — `/init-design` for where design work lives and gets published, `/init-team` for how the code is built, tested and merged. See [`plugins/design-team/README.md`](plugins/design-team/README.md).
 
 For the engineering team, `/init-team` is the part that matters. The agents ship generic; that skill profiles your project — stack, test commands, tracker, environments — and writes the one config file the agents read. Without it they'll tell you they're unconfigured rather than guess at your workflow.
 
@@ -46,6 +46,16 @@ To try it before installing:
 git clone https://github.com/cre8tiv/myco
 claude --plugin-dir myco/plugins        # loads every plugin, dependencies included
 ```
+## Claude Code Usage
+You can start a session with the design agent like this:
+
+`claude --agent=design-team:product-lead`
+
+You can run the /init-design to setup how you want to manage artifacts & documentation.  Once this is completed, 
+
+You can start a session with the tech lead agent like this:
+
+`claude --agent=engineering-team:tech-lead`
 
 ## What you get
 

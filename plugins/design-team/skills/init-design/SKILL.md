@@ -58,12 +58,25 @@ Never write to a destination to test it. A test page in someone's Confluence spa
 
 ## 5. Hand off
 
-Tell the user, briefly:
+Summarize briefly:
 
 1. **What you detected and what you asked**, so they can spot a wrong inference.
 2. **What you verified** vs. took on trust.
 3. **What to commit:** `.claude/team/design.md`.
-4. **How to start:** `claude --agent design-team:product-lead`, then describe an idea — or point it at an existing PRD, by path or link, to adopt.
-5. **Anything you deliberately left blank** and what would fill it in.
+4. **Anything you deliberately left blank** and what would fill it in.
 
 Don't paste the generated file into the chat; say where it is.
+
+Then end with **one concrete next step**, not a menu. Pick it from what you learned: if the user named an existing PRD or spec during setup, the next step is adopting it; if there's a package already in progress, resuming it; otherwise, describing the idea. Name the actual document, link or package.
+
+How you phrase that step depends on where you're running — check before you write it:
+
+- **You are the product lead** — this session was started as `design-team:product-lead`, so your own instructions describe that role. Don't tell the user to start a session; they're in it. Ask whether to go ahead — *"Setup's done. Shall I adopt the PRD at <link> now?"* — and on a yes, continue straight into the product lead's step 0 in this conversation.
+- **You're in any other session** — the product lead has to be the session agent for its decision loop, so the user needs a new session. Give them the exact command and a first message they can paste, and say why it's a new session:
+
+  ```
+  claude --agent design-team:product-lead
+  > Adopt the PRD at <link>
+  ```
+
+Either way, describe the next step as what will actually happen. Adopting a PRD starts with a gap check even when the document looks fully decided, so don't promise the user it will skip straight to the specialists.

@@ -133,8 +133,18 @@ Then tell the user, briefly:
 1. **What you detected and what you asked** — so they can spot a wrong inference.
 2. **Which commands you verified by running** vs. took on trust.
 3. **What to commit**: `.claude/team/project.md`, the `.claude/qa/` scaffold, and `.mcp.json` if you touched it.
-4. **What's next**: hand a goal or ticket to `tech-lead`; invoke `agent-coach` after a week or a batch of tickets, not today — it needs traffic before its three-occurrence threshold means anything.
+4. **The next step** — one concrete action, not a menu (see below). Mention that `agent-coach` is for later: after a week or a batch of tickets, since it needs traffic before its three-occurrence threshold means anything.
 5. **The merge policy in plain words** — "agents will/won't merge without you, and here's how you'll be told" — plus the verified gate result.
 6. **Anything you deliberately left blank** and what would fill it in.
 
 Don't dump the generated file into the chat — say where it is and what's in it.
+
+For the next step, name the actual work if the user mentioned any — a ticket key, or a design package that's ready for engineering. How you phrase it depends on where you're running — check before you write it:
+
+- **You are the tech lead** — this session was started as `engineering-team:tech-lead`, so your own instructions describe that role. Don't tell the user to start a session; they're in it. Ask whether to go ahead — *"Setup's done. Shall I pick up ABC-123 now?"* — and on a yes, continue in this conversation.
+- **You're in any other session** — give the exact command and a first message they can paste:
+
+  ```
+  claude --agent engineering-team:tech-lead
+  > Pick up ABC-123
+  ```
