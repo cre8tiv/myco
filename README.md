@@ -108,10 +108,10 @@ Two more directories your project owns, scaffolded by `/init-team`:
 
 ```sh
 # the guard enforces agent-coach's propose-only mandate (expect exit 2)
-echo '{"agent_type":"agent-coach","tool_name":"Write","tool_input":{"file_path":".claude/team/project.md"}}' | node "<plugin>/scripts/guard.mjs"; echo "exit=$?"
+echo '{"agent_type":"engineering-team:agent-coach","tool_name":"Write","tool_input":{"file_path":".claude/team/project.md"}}' | node "<plugin>/scripts/guard.mjs"; echo "exit=$?"
 
 # ...and leaves every other agent alone (expect exit 0)
-echo '{"agent_type":"tech-lead","tool_name":"Edit","tool_input":{"file_path":"src/app.ts"}}' | node "<plugin>/scripts/guard.mjs"; echo "exit=$?"
+echo '{"agent_type":"engineering-team:tech-lead","tool_name":"Edit","tool_input":{"file_path":"src/app.ts"}}' | node "<plugin>/scripts/guard.mjs"; echo "exit=$?"
 
 # self-reporting works, and resolves the stream from your project profile
 node "<plugin>/scripts/friction.mjs" --agent init-team --kind tooling --note "smoke test"

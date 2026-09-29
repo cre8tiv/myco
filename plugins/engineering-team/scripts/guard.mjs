@@ -49,11 +49,14 @@ function mergeAttempt(cmd, trunk) {
 try {
   const e = JSON.parse((await read()) || '{}');
   const agent = e.agent_type;
+  // Plugin agents arrive namespaced ("engineering-team:agent-coach"), so match on
+  // the role after the last colon; a bare name still matches too.
+  const role = (agent || '').split(':').pop();
   const ti = e.tool_input || {};
   const cmd = ti.command || '';
 
   // ---- rule 1: agent-coach is propose-only -------------------------------
-  if (agent === 'agent-coach') {
+  if (role === 'agent-coach') {
     const blob = [ti.file_path, cmd, ti.notebook_path].filter(Boolean).join(' ').split('\\').join('/');
     const isWrite =
       ['Write', 'Edit', 'NotebookEdit'].includes(e.tool_name) ||

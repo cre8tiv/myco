@@ -119,10 +119,10 @@ For a project with no web surface, skip this entirely — don't make a SQL or CL
 
 ```sh
 # the guard enforces agent-coach's propose-only mandate (expect exit 2)
-echo '{"agent_type":"agent-coach","tool_name":"Write","tool_input":{"file_path":".claude/team/project.md"}}' | node "${CLAUDE_PLUGIN_ROOT}/scripts/guard.mjs"; echo "exit=$?"
+echo '{"agent_type":"engineering-team:agent-coach","tool_name":"Write","tool_input":{"file_path":".claude/team/project.md"}}' | node "${CLAUDE_PLUGIN_ROOT}/scripts/guard.mjs"; echo "exit=$?"
 
 # ...and leaves everyone else alone (expect exit 0)
-echo '{"agent_type":"tech-lead","tool_name":"Edit","tool_input":{"file_path":"src/app.ts"}}' | node "${CLAUDE_PLUGIN_ROOT}/scripts/guard.mjs"; echo "exit=$?"
+echo '{"agent_type":"engineering-team:tech-lead","tool_name":"Edit","tool_input":{"file_path":"src/app.ts"}}' | node "${CLAUDE_PLUGIN_ROOT}/scripts/guard.mjs"; echo "exit=$?"
 
 # self-reporting works and resolves the stream from the profile you just wrote
 node "${CLAUDE_PLUGIN_ROOT}/scripts/friction.mjs" --agent init-team --kind tooling --note "init-team smoke test"
@@ -130,10 +130,10 @@ tail -1 ~/.claude/ops/<stream>/friction.jsonl
 
 # the merge gate matches the policy you just recorded
 #   human-approval -> exit 2   |   autonomous -> exit 0
-echo '{"agent_type":"tech-lead","tool_name":"Bash","cwd":"'"$PWD"'","tool_input":{"command":"gh pr merge 1"}}' | node "${CLAUDE_PLUGIN_ROOT}/scripts/guard.mjs"; echo "exit=$?"
+echo '{"agent_type":"engineering-team:tech-lead","tool_name":"Bash","cwd":"'"$PWD"'","tool_input":{"command":"gh pr merge 1"}}' | node "${CLAUDE_PLUGIN_ROOT}/scripts/guard.mjs"; echo "exit=$?"
 
 # ...and an IC keeping its branch current is never blocked (expect exit 0)
-echo '{"agent_type":"ic-generalist","tool_name":"Bash","cwd":"'"$PWD"'","tool_input":{"command":"git merge origin/main"}}' | node "${CLAUDE_PLUGIN_ROOT}/scripts/guard.mjs"; echo "exit=$?"
+echo '{"agent_type":"engineering-team:ic-generalist","tool_name":"Bash","cwd":"'"$PWD"'","tool_input":{"command":"git merge origin/main"}}' | node "${CLAUDE_PLUGIN_ROOT}/scripts/guard.mjs"; echo "exit=$?"
 ```
 
 Run the merge-gate check and **say the result out loud to the user** — it's the one place where a typo in the profile silently changes how much autonomy the team has.
