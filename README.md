@@ -25,12 +25,14 @@ The package directory is the only contract between them; they share no code.
 ## Install
 
 ```
-/plugin marketplace add cre8tiv/myco
+/plugin marketplace add https://github.com/cre8tiv/myco.git
 /plugin install design-team@myco          # optional
 /plugin install engineering-team@myco
 /init-design                              # if you installed design-team
 /init-team
 ```
+
+Use the HTTPS URL: the `cre8tiv/myco` shorthand clones over SSH, and without GitHub SSH keys every marketplace refresh fails and you're left on a stale catalog.
 
 `team-ops` comes with either team; you don't install it yourself. If you're updating an engineering-team install from before team-ops existed, run `/reload-plugins` after updating so the new dependency is installed.
 
@@ -150,6 +152,8 @@ If that last path doesn't exist but a directory named after your project folder 
 `/init-team` is idempotent and safe to re-run. Do it when commands, tracker fields, workflow states or environments change. It reads the existing profile, confirms what's still true, and won't discard prose a human has added or overwrite accumulated QA plans and reports.
 
 ## Troubleshooting
+
+**"Plugin not found in marketplace", or new plugins never appear after an update.** The marketplace was added by its `cre8tiv/myco` shorthand, which refreshes over SSH; without GitHub SSH keys the refresh fails and the cached catalog goes stale. Remove the marketplace and add it again by `https://github.com/cre8tiv/myco.git`, then reinstall the plugins.
 
 **The agents don't appear.** Confirm the marketplace and plugin are both added (`/plugin`), then restart — plugin components load at session start.
 
