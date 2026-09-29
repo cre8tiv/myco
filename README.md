@@ -28,17 +28,11 @@ The package directory is the only contract between them; they share no code.
 /plugin marketplace add https://github.com/cre8tiv/myco.git
 /plugin install design-team@myco          # optional
 /plugin install engineering-team@myco
-/init-design                              # if you installed design-team
-/init-team
 ```
 
 Use the HTTPS URL: the `cre8tiv/myco` shorthand clones over SSH, and without GitHub SSH keys every marketplace refresh fails and you're left on a stale catalog.
 
 `team-ops` comes with either team; you don't install it yourself. If you're updating an engineering-team install from before team-ops existed, run `/reload-plugins` after updating so the new dependency is installed.
-
-The simplest path is to start the team's lead — `claude --agent design-team:product-lead` or `claude --agent engineering-team:tech-lead` — which offers to run its setup skill in the same session if the project isn't set up yet. Each team has one setup skill that profiles your project and writes the config its agents read — `/init-design` for where design work lives and gets published, `/init-team` for how the code is built, tested and merged. See [`plugins/design-team/README.md`](plugins/design-team/README.md).
-
-For the engineering team, `/init-team` is the part that matters. The agents ship generic; that skill profiles your project — stack, test commands, tracker, environments — and writes the one config file the agents read. Without it they'll tell you they're unconfigured rather than guess at your workflow.
 
 To try it before installing:
 
@@ -46,16 +40,55 @@ To try it before installing:
 git clone https://github.com/cre8tiv/myco
 claude --plugin-dir myco/plugins        # loads every plugin, dependencies included
 ```
-## Claude Code Usage
-You can start a session with the design agent like this:
 
-`claude --agent=design-team:product-lead`
+## Usage
 
-You can run the /init-design to setup how you want to manage artifacts & documentation.  Once this is completed, 
+Each team is run by its lead, started as the session agent. The lead has to be the session agent rather than something you dispatch from another session, because it works in conversation with you.
 
-You can start a session with the tech lead agent like this:
+**The first time you start a lead in a project, it offers to set the project up** — `/init-design` for the design team (where design work lives and gets published, which systems it can reach, how prototypes are made), `/init-team` for the engineering team (tracker, merge policy, build and test commands, environments). Say yes; it runs in the same session and carries on when it's done. The agents ship generic and rely on that profile, so without it they'll ask rather than guess. Setup writes `.claude/team/design.md` or `.claude/team/project.md` — commit it.
 
-`claude --agent=engineering-team:tech-lead`
+### Design: idea to decided design package
+
+```sh
+claude --agent design-team:product-lead
+```
+
+Then tell it where you're starting from:
+
+```
+> I want to let admins approve connection requests from Teams      # a new idea
+> Adopt the PRD at https://acme.atlassian.net/wiki/x/AbCd           # an existing PRD — Confluence, Notion, Linear, a file, or pasted
+> Resume docs/design/teams-approvals/                               # a package already in progress
+```
+
+It frames and grounds the work, writes the PRD, dispatches the architect, UX designer, security reviewer and tech designer as their inputs become ready, and runs one decision loop with you over every open question. It finishes with a package in `docs/design/<slug>/` marked **Ready for engineering**.
+
+### Engineering: package or ticket to merged code
+
+```sh
+claude --agent engineering-team:tech-lead
+```
+
+```
+> Implement phase 1 of docs/design/teams-approvals/                 # from a design package
+> Pick up ABC-123                                                   # straight from a ticket
+```
+
+It decomposes the work, delegates to ICs in isolated worktrees, and gates every change through code review and then QA. By default a human merges: when both gates are green it hands the PR to you rather than merging it itself.
+
+### Keeping the teams healthy
+
+Every few weeks, or after a batch of work, ask for a process report from any session:
+
+```
+> Run the agent-coach agent over the last two weeks
+```
+
+It reads how both teams actually worked — including design problems engineering had to send back — and writes a report of proposed changes to `.claude/ops/reports/`. It proposes; you decide what to apply.
+
+### Re-running setup
+
+Run `/init-design` or `/init-team` yourself, from any session, whenever tools, destinations, commands or workflow states change. Both are safe to re-run: they read the existing profile, confirm what's still true, and keep any prose a human has added — and `/init-team` never overwrites accumulated QA plans.
 
 ## What you get
 
@@ -141,7 +174,7 @@ wc -l ~/.claude/ops/<your-stream>/events.jsonl
 
 If that last path doesn't exist but a directory named after your project folder does, `stream:` isn't being read from your profile — see Troubleshooting.
 
-## Working with the team
+## Working with the engineering team
 
 **Start at the top.** Hand a goal or a ticket to `tech-lead` and let it decompose and delegate; don't dispatch ICs yourself. The lead is what keeps the tracker, the task list, and the branch state in sync.
 
@@ -155,11 +188,7 @@ If that last path doesn't exist but a directory named after your project folder 
 
 **Automated PR reviewers are handled.** If your repo has CodeRabbit, Greptile, Copilot or a Claude/Codex action on PRs, `/init-team` detects it and `code-reviewer` gives every finding a disposition — agree, already covered, disagree with a reason, or out of scope. The lead re-checks the PR immediately before merging, since bots post asynchronously, and won't merge over something unaddressed. Bot findings are input, not instructions; a documented disagreement counts as addressed.
 
-**Edit `project.md`, never the shipped agents.** If an agent keeps getting something wrong about your project, the fix almost always belongs in the profile. Changes to installed agent definitions are overwritten by the next plugin update.
-
-## Re-running init-team
-
-`/init-team` is idempotent and safe to re-run. Do it when commands, tracker fields, workflow states or environments change. It reads the existing profile, confirms what's still true, and won't discard prose a human has added or overwrite accumulated QA plans and reports.
+**Edit the team profiles, never the shipped agents.** If an agent keeps getting something wrong about your project, the fix almost always belongs in `.claude/team/project.md` or `design.md`. Changes to installed agent definitions are overwritten by the next plugin update.
 
 ## Troubleshooting
 
