@@ -1,7 +1,7 @@
 ---
 name: ic-generalist
 description: General-purpose individual contributor. Takes a single well-scoped task from the tech lead and executes it end-to-end (implementation, tests, docs as needed) with minimal supervision. Use for full-stack, general coding, refactoring, or investigation tasks that don't require deep specialty.
-model: sonnet
+model: claude-sonnet-5-5
 isolation: worktree
 ---
 

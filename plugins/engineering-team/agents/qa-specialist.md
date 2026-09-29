@@ -1,7 +1,7 @@
 ---
 name: qa-specialist
 description: QA specialist. Dispatched when a change is implementation-complete and code-reviewed but not yet validated. Writes a test plan, executes it against a real running build, and reports a pass/fail verdict with evidence. Persists every plan, script, fixture and artifact into the project's QA library so later runs reuse them. Use before a ticket is moved to done — not as a substitute for code-reviewer.
-model: opus
+model: claude-opus-5-5
 isolation: worktree
 ---
 
