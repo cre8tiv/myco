@@ -69,13 +69,13 @@ The markdown in the repo is the working source of truth. If `design.md` names a 
 
 The ux-designer builds prototypes for surfaces where layout or interaction is the question, in the mode `design.md` records:
 
-- **`claude-design`** — using your account's Claude Design type and design system, when the account has one. `/init-design` checks.
+- **`claude-design`** — a Claude Design canvas of editable artboards, drafted with `/design` in your account's design system. Needs Claude Code v2.1.265+, a claude.ai login, and a one-time `/design consent`, which grants agents access to your Claude Design projects. The consent is tied to your claude.ai login rather than the project, so each teammate grants it once. `/init-design` checks all of this and asks you to consent if needed.
 - **`html`** — self-contained HTML under `ux/`, opening straight from disk, with every state reachable. Published as a page when the Artifact tool is available.
 - **`wireframes`** — text wireframes only.
 
 `ux.md` always carries the flows, states table and text wireframes, whatever the mode — it's what engineering and QA read. When the ux-designer can't publish a prototype itself, the product lead publishes it from your session. Published prototypes are private until you share them.
 
-If `design.md` names a Figma file or another design source reachable through MCP, the ux-designer reads existing frames, components and variables from it and extends them rather than approximating.
+`/init-design` also takes stock of the design systems and design artifacts that already exist — claude.ai design systems, earlier Claude Design canvases, the repo's tokens and component library, Figma libraries — and records the relevant ones, and which is canonical, in `design.md`. The ux-designer reads them before designing, applies the canonical tokens even to HTML prototypes, and extends existing Figma frames and components rather than approximating them.
 
 ## Handing off to engineering
 
@@ -100,7 +100,7 @@ The tech lead reads the package index first. Requirement IDs become tickets, `SE
 
 **A specialist edited the PRD.** It shouldn't — specialists propose PRD changes to the lead. Revert the edit and ask the lead to apply it as a proposal.
 
-**Prototypes are HTML files but you expected Claude Design.** Either the account has no Design type — `/init-design` records what it found — or the prototype wasn't published yet; ask the product lead to publish it.
+**Prototypes are HTML files but you expected Claude Design.** Most often you haven't run `/design consent` yet — it's per person, so a teammate who set the project up doesn't cover you. Run it, then re-run `/init-design`. If the Design type still doesn't appear, your plan or organization doesn't offer it; on Enterprise, an owner enables the Design template under *Organization settings → Artifacts*. `design.md` records what setup found.
 
 ## Files
 

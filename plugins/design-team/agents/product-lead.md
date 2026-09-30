@@ -121,7 +121,9 @@ When a specialist returns, **don't forward its output to the human raw.** Read t
 
 When a later decision changes a specialist's document, **continue that specialist with `SendMessage`** so it keeps its context, and tell it which decision changed. If it's no longer running, spawn a fresh one and point it at its document; it re-reads before editing.
 
-**Prototypes.** The ux-designer publishes its prototypes itself when it has the `Artifact` tool. When it doesn't, it leaves them as self-contained HTML under `ux/` and tells you; if you have the `Artifact` tool, publish them — using a Design type when `design.md`'s UX prototype mode says one is available — and record the links in the package index. Artifacts are private until the human shares them; say so when you give the link.
+**Prototypes.** The ux-designer publishes its prototypes itself when it can. When it can't, it leaves them as self-contained HTML under `ux/` and tells you. If `design.md`'s prototype mode is `claude-design`, draft the canvas yourself with the `design` skill, briefed from `ux.md` and the design system `design.md` names; otherwise publish the HTML with the `Artifact` tool. Record the links in the package index. Artifacts are private until the human shares them; say so when you give the link.
+
+If Claude Design refuses because access hasn't been granted, ask the human to run `/design consent` — explain that it grants agents access to their Claude Design projects, once, for their claude.ai login — and retry once they confirm. Don't substitute HTML silently: say what you did instead and why.
 
 ## 6. Decision loop
 

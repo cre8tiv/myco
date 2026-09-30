@@ -57,10 +57,25 @@ Where pre-existing product documents usually come from, so adopting one doesn't 
 ## UX and design system
 
 - **Surfaces this product has:** <web app, CLI, API, email, mobile>
-- **Design system:** <name and where it lives — a claude.ai design system, a Figma library, a component package in the repo, or "none">
-- **Design files:** <e.g. Figma file or team, via `mcp__figma__*`; what's in it>
-- **Prototype mode:** <claude-design | html | wireframes> — must match `ux_prototypes` above. `claude-design` needs an account with a Design type; the ux-designer falls back to self-contained HTML when the tool isn't available.
+- **Canonical design system:** <which one wins when they disagree — usually the repo's, since engineering builds from it>
 - **Fidelity expected:** <low-fi structure and states (default) | higher fidelity>
+
+### Design systems and references
+
+Every design system and design artifact the ux-designer should design within. List only what's relevant to this product.
+
+| What | Kind | Where | Notes |
+| ---- | ---- | ----- | ----- |
+| <e.g. Acme DS> | claude.ai design system | <link> | <used for Claude Design canvases> |
+| <e.g. tokens> | repo | <`packages/ui/tokens.json`, `tailwind.config.ts`> | <source of truth for colors, type, spacing> |
+| <e.g. component library> | repo | <`packages/ui/`, Storybook URL> | <components engineering already has> |
+| <e.g. Product library> | Figma | <file or team, via `mcp__figma__*`> | <what's in it> |
+| <e.g. Onboarding canvas> | design artifact | <claude.ai artifact link> | <prior exploration to build on> |
+
+### Prototypes
+
+- **Prototype mode:** <claude-design | html | wireframes> — must match `ux_prototypes` above.
+- **Claude Design access:** <granted by <name> on <date> | not granted | not offered on this plan>. Access is granted per person with `/design consent`, tied to their claude.ai login, not to this project — every teammate who runs the design team grants it once. Without it, prototypes fall back to self-contained HTML.
 
 ## Conventions and gotchas
 
