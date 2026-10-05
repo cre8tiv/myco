@@ -6,7 +6,7 @@ A Claude Code plugin marketplace for agent teams.
 | ------ | ---------- |
 | [`design-team`](plugins/design-team) | From idea to a decided design package: product lead, architect, security reviewer, tech designer, UX designer. Produces the PRD, architecture, security review, tech design and UX that engineering builds from. |
 | [`engineering-team`](plugins/engineering-team) | Engineering delivery: tech lead, ICs, independent code review, QA validation with a persistent test library, and an enforced human merge gate. |
-| [`team-ops`](plugins/team-ops) | Observability for every team: hook capture, a friction-reporting skill for agents, and `agent-coach`, which analyzes how the teams work — including handoffs between them — and proposes improvements. Installed automatically with either team. |
+| [`team-ops`](plugins/team-ops) | Shared by every team: the list of docs and knowledge sources agents consult (`/init-knowledge`), hook capture, a friction-reporting skill for agents, and `agent-coach`, which analyzes how the teams work — including handoffs between them — and proposes improvements. Installed automatically with either team. |
 
 Each plugin installs and works independently. Together they cover idea to merged code:
 
@@ -45,7 +45,7 @@ claude --plugin-dir myco/plugins        # loads every plugin, dependencies inclu
 
 Each team is run by its lead, started as the session agent. The lead has to be the session agent rather than something you dispatch from another session, because it works in conversation with you.
 
-**The first time you start a lead in a project, it offers to set the project up** — `/init-design` for the design team (where design work lives and gets published, which systems it can reach, how prototypes are made), `/init-team` for the engineering team (tracker, merge policy, build and test commands, environments). Say yes; it runs in the same session and carries on when it's done. Either setup also records the project's documentation and knowledge sources — product docs, API references, internal knowledge bases, including MCP servers built for your product — in a shared `.claude/team/knowledge.md` that both teams consult before guessing. The agents ship generic and rely on that profile, so without it they'll ask rather than guess. Setup writes `.claude/team/design.md` or `.claude/team/project.md` — commit it.
+**The first time you start a lead in a project, it offers to set the project up** — `/init-design` for the design team (where design work lives and gets published, which systems it can reach, how prototypes are made), `/init-team` for the engineering team (tracker, merge policy, build and test commands, environments). Say yes; it runs in the same session and carries on when it's done. Either setup also runs `/init-knowledge` (below). The agents ship generic and rely on these profiles, so without them they'll ask rather than guess. Setup writes `.claude/team/design.md` or `.claude/team/project.md`, plus `.claude/team/knowledge.md` — commit them.
 
 ### Design: idea to decided design package
 
@@ -86,9 +86,27 @@ Every few weeks, or after a batch of work, ask for a process report from any ses
 
 It reads how both teams actually worked — including design problems engineering had to send back — and writes a report of proposed changes to `.claude/ops/reports/`. It proposes; you decide what to apply.
 
+### Knowledge sources
+
+`/init-knowledge` records the documentation and knowledge sources every team should consult — product docs, API references, internal engineering docs, knowledge bases, runbooks — in one shared file, `.claude/team/knowledge.md`. Both setup skills run it, so you don't need to on first use; the second one confirms the list rather than asking again.
+
+It checks every MCP server connected to your session, not just familiar kinds like trackers and wikis, so a docs server built for your product is found, and it asks what any server it can't identify is for. Docs sites reachable by URL and docs in the repo count too. Each source is recorded with:
+
+- **how to reach it** — an MCP server, a URL, or a repo path;
+- **what it answers** — the questions an agent would bring to it, which is how agents decide when to use it;
+- **who uses it** — which roles, from product lead to QA;
+- **authority** — *authoritative* (published docs and API references), *internal* (accurate but not a promise), or *community* (unverified). For the design team this is the difference between a capability it can build on as a supported contract and one that's only internal;
+- **access** — whether it's ready to use or needs authorizing.
+
+Agents then check the sources the list names before inferring from the code or from memory.
+
+**Connectors you haven't authorized are listed, not silently skipped.** A connector can be configured but unusable until you authorize it. `/init-knowledge` lists each one under *Needs authorization* and asks you to authorize it in claude.ai **Settings → Connectors** or with `/mcp`. Authorization is per person, so each teammate who runs the agents does this once.
+
+Run `/init-knowledge` yourself, from any session, when a new docs source or MCP server becomes available, after you authorize a connector, or to add a source by hand.
+
 ### Re-running setup
 
-Run `/init-design` or `/init-team` yourself, from any session, whenever tools, destinations, commands or workflow states change. Both are safe to re-run: they read the existing profile, confirm what's still true, and keep any prose a human has added — and `/init-team` never overwrites accumulated QA plans.
+Run `/init-design` or `/init-team` yourself, from any session, whenever tools, destinations, commands or workflow states change — or just `/init-knowledge` when only the knowledge sources have. Both are safe to re-run: they read the existing profile, confirm what's still true, and keep any prose a human has added — and `/init-team` never overwrites accumulated QA plans.
 
 ## What you get
 
@@ -141,7 +159,7 @@ It records: what the software is, the tracker and its real MCP tool prefix, work
 
 **The team does not assume you're building a web app.** QA's execution mode comes from the profile — a browser for a web UI, HTTP probes for a service, invocation for a CLI, a consumer harness for a library, migration-against-realistic-data for a data project, an emulator for mobile. `/init-team` detects what it can and asks about the rest.
 
-Two more directories your project owns, scaffolded by `/init-team`:
+Everything your project owns, all written by the setup skills:
 
 | Path | Committed? | Why |
 | ---- | ---------- | --- |
@@ -197,7 +215,11 @@ If that last path doesn't exist but a directory named after your project folder 
 
 **The agents don't appear.** Confirm the marketplace and plugin are both added (`/plugin`), then restart — plugin components load at session start.
 
-**An agent says the project profile is missing.** Run `/init-team`. The agents refuse to guess at a tracker workflow or a test command, by design.
+**An agent says the project profile is missing.** Run `/init-team` or `/init-design` for that team, or start the team's lead and accept its offer to set up. The agents refuse to guess at a tracker workflow or a test command, by design.
+
+**An agent guessed at something your docs answer.** The source is missing from `.claude/team/knowledge.md`, its *Answers* column doesn't say when to use it, or it's listed under *Needs authorization*. Run `/init-knowledge` to add or re-describe it — `agent-coach` also proposes this when it sees repeated "couldn't find it" friction.
+
+**A docs connector shows up only as `authenticate` tools.** It's configured but not authorized for you. Authorize it in claude.ai **Settings → Connectors** or with `/mcp`, then re-run `/init-knowledge` to verify it and move it out of *Needs authorization*. A teammate authorizing it doesn't cover you.
 
 **Hooks never fire — the event stream stays empty.** They load at session start, so restart after installing. Check `node` is on PATH; the hook commands shell out to it.
 
@@ -225,6 +247,6 @@ If you change an agent definition:
 
 - Say what signal you expect to move.
 - Prefer deleting or tightening over appending.
-- Keep project-specific knowledge out of `agents/` — if it's true of one company's setup and not another's, it belongs in the `project.md` template or in `/init-team`'s interview.
+- Keep project-specific knowledge out of `agents/` — if it's true of one company's setup and not another's, it belongs in a profile template (`project.md`, `design.md`, `knowledge.md`) or in a setup skill's interview.
 
 Internals are documented in [`plugins/engineering-team/README.md`](plugins/engineering-team/README.md).
