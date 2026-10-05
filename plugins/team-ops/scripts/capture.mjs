@@ -26,13 +26,19 @@ const read = () =>
 
 try {
   const e = JSON.parse((await read()) || '{}');
+
+  // Only team agents. Plugins are installed per user, so these hooks fire in every
+  // session in the project — an orchestrating session, an ad-hoc one. Their events
+  // aren't team activity and would skew the coach's numbers. Team agents are
+  // plugin agents, and plugin agents are namespaced ("engineering-team:ic-generalist").
+  if (!String(e.agent_type || '').includes(':')) process.exit(0);
+
   const ti = e.tool_input || {};
 
   const rec = {
     ts: new Date().toISOString(),
     event: e.hook_event_name,
-    // Who: "main" when the hook fired outside a subagent.
-    agent: e.agent_type || 'main',
+    agent: e.agent_type,
     agent_id: e.agent_id,
     session: e.session_id,
     cwd: e.cwd,

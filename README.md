@@ -104,6 +104,18 @@ Agents then check the sources the list names before inferring from the code or f
 
 Run `/init-knowledge` yourself, from any session, when a new docs source or MCP server becomes available, after you authorize a connector, or to add a source by hand.
 
+### Running headless
+
+Both leads run unattended with `claude -p`, for example from a script that drives a whole design-to-build run:
+
+```sh
+CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 claude -p --agent engineering-team:tech-lead "Implement phase 1 of docs/design/<slug>/"
+```
+
+- **Set `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`.** In `-p` mode Claude Code waits only 10 minutes by default for background work after the final turn, then stops it. The leads dispatch long-running ICs, reviewers and QA in the background, so without this a QA run or an IC can be killed partway through. `0` waits until they finish. Requires Claude Code v2.1.182 or later.
+- **Resume interrupted runs with `--resume <session-id>`.** A network drop or a memory kill doesn't lose the work: the tech lead rebuilds its state from the tracker and GitHub when it resumes.
+- **Mind the machine.** Each parallel IC or QA run is a worktree with its own dependency install and test run. `max_parallel_agents` in `.claude/team/project.md` caps how many run at once; lower it if runs get stopped for low memory.
+
 ### Re-running setup
 
 Run `/init-design` or `/init-team` yourself, from any session, whenever tools, destinations, commands or workflow states change — or just `/init-knowledge` when only the knowledge sources have. Both are safe to re-run: they read the existing profile, confirm what's still true, and keep any prose a human has added — and `/init-team` never overwrites accumulated QA plans.
@@ -245,6 +257,7 @@ If that last path doesn't exist but a directory named after your project folder 
 
 If you change an agent definition:
 
+- **Bump the plugin's `version` in its `plugin.json`.** An installed plugin is pinned to its version: `/plugin update` does nothing for a change that keeps the same version, so the change never reaches anyone. Use a minor bump for behavior changes and a patch bump for fixes.
 - Say what signal you expect to move.
 - Prefer deleting or tightening over appending.
 - Keep project-specific knowledge out of `agents/` — if it's true of one company's setup and not another's, it belongs in a profile template (`project.md`, `design.md`, `knowledge.md`) or in a setup skill's interview.

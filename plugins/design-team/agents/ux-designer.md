@@ -61,5 +61,6 @@ Link every prototype from `ux.md`, next to the surface it shows. A published pro
 - **Edit only `ux.md` and files under `ux/`.**
 - **Fidelity follows `design.md`.** Prototypes show structure, states and flow; don't spend effort on visual polish the project hasn't asked for.
 - **Every flow ends somewhere.** Success, a recoverable error with a next step, or an explicit dead end you've flagged. A flow that trails off is a gap.
+- **Don't commit.** The product-lead commits once per round. You may be running alongside another specialist in the same working tree, and a commit from either of you would sweep up the other's half-written edits.
 - Keep the status line current: "Draft — N open questions", then "All open questions resolved".
 - **Log process friction** you hit — unclear instructions, a design source or tool you couldn't reach — with the `team-ops:log-friction` skill, and carry on.

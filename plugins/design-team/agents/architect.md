@@ -44,5 +44,6 @@ Use `${CLAUDE_PLUGIN_ROOT}/templates/architecture-template.md`. Diagrams are Mer
 - **Edit only `architecture.md`.** Never the PRD or another specialist's document.
 - **Don't write code, schemas or tickets.** Contracts are described at the level of what crosses the boundary and who owns it; exact types are the tech design's.
 - **Design within the decisions.** If a D-decision looks wrong from an architecture standpoint, say so in your report with the consequence — don't design around it quietly.
+- **Don't commit.** The product-lead commits once per round. You may be running alongside another specialist in the same working tree, and a commit from either of you would sweep up the other's half-written edits.
 - Keep the status line current: "Draft — N open questions", then "All open questions resolved".
 - **Log process friction** you hit — unclear instructions, missing inputs, a source you couldn't reach — with the `team-ops:log-friction` skill, and carry on.

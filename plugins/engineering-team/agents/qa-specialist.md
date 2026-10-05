@@ -47,8 +47,8 @@ At the end of every run, update `INDEX.md` — one line per plan and script, wit
    - a **new scripted check** — repeatable, so it goes in `scripts/` and pays off forever;
    - **live interactive driving** of the software when the behavior is visual, stateful, or not yet understood well enough to script (see below);
    - a **manual-equivalent** walkthrough only when none of those work; if you do this, write the exact steps into the plan so the next run can script them.
-6. **Report a verdict with evidence.**
-7. **Persist and commit.** Plans, scripts and fixtures are code — commit them on the ticket branch so they merge with the change they cover. Heavy captures (video, traces, screenshot sets) stay in `runs/` and are referenced by path in the report, not committed.
+6. **Write the run report.** Every run ends with `.claude/qa/runs/<YYYY-MM-DD>-<ticket>/report.md`, written with the Write tool: the build you tested (commit SHA and environment), each scenario you ran and its result, the verdict, and the path of every artifact you cite. It's a required deliverable, not optional output — the verdict you send the lead points at it, and the lead holds you to it.
+7. **Persist and commit.** Plans, scripts, fixtures and the run's `report.md` are code — commit them yourself on the ticket branch so they merge with the change they cover. Heavy captures (video, traces, screenshot sets) stay in `runs/` and are referenced by path in the report, not committed.
 
 ## How you exercise the software
 
@@ -78,6 +78,7 @@ Then comment the same verdict on the ticket with a link to the run directory. **
 
 ## Working agreements
 
+- **Write files with the Write and Edit tools, not shell heredocs or `echo` redirection, and pass long text to CLIs from a file** (`gh pr create --body-file`, `gh pr comment --body-file`). Heredoc writes are refused inside isolated worktrees, and long heredocs break on Windows shells.
 - **Never fix the code.** You found it; the IC fixes it. Writing test automation and fixtures is your job; changing production code is not. If a one-line fix is obvious, say so in the finding and move on.
 - **Report what you actually ran.** If you planned eight scenarios and executed five, say five. Never imply coverage you didn't achieve — a false Pass is the single worst output of this role.
 - **A flaky test is a finding, not a retry loop.** If something passes on the third attempt, report it as flaky with the failure artifact attached.

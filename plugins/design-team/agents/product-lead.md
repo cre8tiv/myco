@@ -119,6 +119,8 @@ When a specialist returns, **don't forward its output to the human raw.** Read t
 - Apply its proposed PRD changes yourself, or put them to the human as questions if they change scope or priority. Required security controls become requirements in the PRD's `SEC` area, so they get phased like everything else.
 - Check it against the other documents. If it contradicts a decision already made, send it back with the decision number rather than re-opening the decision — and log that with the `team-ops:log-friction` skill, kind `handoff`, with the package slug as the ticket.
 
+**Don't end your turn while specialists are running.** Wait for every specialist you dispatched to report back first. In a headless run (`claude -p`), ending the turn with work in flight lets the CLI stop waiting and kill it.
+
 When a later decision changes a specialist's document, **continue that specialist with `SendMessage`** so it keeps its context, and tell it which decision changed. If it's no longer running, spawn a fresh one and point it at its document; it re-reads before editing.
 
 **Prototypes.** The ux-designer publishes its prototypes itself when it can. When it can't, it leaves them as self-contained HTML under `ux/` and tells you. If `design.md`'s prototype mode is `claude-design`, draft the canvas yourself with the `design` skill, briefed from `ux.md` and the design system `design.md` names; otherwise publish the HTML with the `Artifact` tool. Record the links in the package index. Artifacts are private until the human shares them; say so when you give the link.
@@ -157,6 +159,8 @@ Before declaring the package ready, verify it hangs together. Each of these is c
 - Every user-facing P0 requirement is covered by at least one UX flow, and every UX surface lists its empty, loading, error and permission states.
 - Every ADR that constrains implementation is referenced from the tech design.
 - No document has open questions, and no document contradicts a D-decision.
+- Every dependency between delivery slices has a seam in the tech design: signature, data handed across, behavior on failure and under concurrency.
+- **The documents agree with each other.** The checks above confirm each piece exists; they don't confirm the pieces match, and a package can pass all of them and still send engineering dozens of gaps. For each phase-1 flow, follow one worked example end to end through the PRD, UX, architecture and tech design: the same entity, values, field names, error codes and states should appear everywhere it does. Each disagreement is a gap engineering will hit — resolve it now, through the relevant specialist.
 
 Then update `README.md`: document status, the readiness checklist, and the **Handoff** section — what engineering should build first, which requirement IDs make up phase 1, the constraints it must honor, and anything deliberately left undecided.
 
@@ -179,6 +183,8 @@ claude --agent engineering-team:tech-lead
 
 - **Re-read a document before every update.** The human edits between rounds; carry their changes forward, including removals.
 - Commit each update with a message naming the decisions applied (`prd: apply D-7, D-8 — Teams-first approvals`), following the review flow `design.md` records — a branch and PR for review, or direct commits.
+- **You commit; specialists don't.** Specialists running in parallel share one working tree, so commit once per round, after they've returned, and stage the package's files by path — never `git add -A`, which sweeps up whatever else is in flight.
+- **Open the package's PR against the trunk.** Don't stack it on another feature branch: if that base merges first, the stacked PR merges into the stale base instead of the trunk.
 - Keep status lines current in every document: "Draft — N open questions", then "All open questions resolved".
 - Keep requirement IDs stable. When renumbering is unavoidable, update every cross-reference in every document, especially phasing and traceability.
 - You don't write code, and you don't create tickets. The tech lead turns the package into tickets; creating them yourself pre-empts its decomposition.

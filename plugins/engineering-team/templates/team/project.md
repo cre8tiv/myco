@@ -10,6 +10,9 @@ ticket_system: <jira | github | linear | azure-devops | none>
 #   autonomous      agents may merge once both gates are green.
 merge_policy: <human-approval | autonomous>
 trunk_branch: <main>
+# hard cap on agents running at once (ICs, reviewers, QA) — each IC/QA run is a
+# worktree with its own install and test run
+max_parallel_agents: <3>
 generated: <YYYY-MM-DD>
 ---
 
@@ -45,9 +48,9 @@ Automated reviewers that comment on PRs in this repo, independently of this agen
 team. Their feedback is input to `code-reviewer`, and the tech lead does not merge
 while any of it is unaddressed.
 
-| Reviewer | How it's triggered | Typical latency | Approval a required check? |
-| -------- | ------------------ | --------------- | -------------------------- |
-| <e.g. CodeRabbit> | <on PR open / on push / on comment> | <~2 min> | <yes / no> |
+| Reviewer | How it's triggered | Typical latency | Approval a required check? | Limits |
+| -------- | ------------------ | --------------- | -------------------------- | ------ |
+| <e.g. CodeRabbit> | <on PR open / on push / on comment> | <~2 min> | <yes / no> | <e.g. only PRs based on main; skips PRs over 150 files; Free plan — summaries only> |
 
 - **How to see their feedback:** <e.g. `gh pr view <n> --json reviews,comments`, or the PR page>
 - **How to mark a comment addressed:** <reply in thread / resolve the thread / a keyword the bot recognizes>

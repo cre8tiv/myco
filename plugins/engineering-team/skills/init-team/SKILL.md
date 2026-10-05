@@ -38,6 +38,7 @@ Use `AskUserQuestion` for what you couldn't infer, batching related questions. R
 - **Ephemeral/preview environments** — do they exist, how is one created, how is one reset? If the project has a skill or script for this, name it.
 - **Workflow state names**, if the tracker exposes several and the mapping isn't obvious.
 - **The stream slug** — propose the repo name; it only needs confirming.
+- **How many agents may run at once** (`max_parallel_agents`). Each parallel IC or QA run is a git worktree with its own dependency install and test run. Check the machine's memory and how heavy one install-and-test cycle is in this project, and propose a number; 3 is a safe default for a typical project on a 32 GB machine.
 - **Prerequisites to run locally** that aren't in the repo: required services, env vars, seed data, credentials. Ask what's needed, never for the secret values themselves.
 
 ### Always ask about the merge policy
@@ -56,7 +57,7 @@ If they choose `autonomous`, still agree an **escalation list** — the change t
 
 ### Ask about automated reviewers only to confirm
 
-Show what you detected and confirm it, rather than asking from scratch. What you can't detect and should ask: how a comment is marked addressed on this repo (reply, resolve the thread, a keyword the tool recognizes), and whether any of them reliably produce **known noise** on this codebase — findings that are always wrong here. That last answer saves the reviewer re-litigating the same false positive on every PR, so it's worth asking even though it feels like an odd question.
+Show what you detected and confirm it, rather than asking from scratch. A review app installed across a whole account or organization may not have reviewed any PR you sampled — it may skip PRs based on a branch other than the trunk, or above a size limit, or be on a plan that only summarizes — so ask directly whether any review apps are installed beyond the ones you found. For each bot, record its **limits**: which base branches it reviews, size caps, and what its plan does and doesn't do. Without them, a skipped PR looks like a stuck bot. What you can't detect and should ask: how a comment is marked addressed on this repo (reply, resolve the thread, a keyword the tool recognizes), and whether any of them reliably produce **known noise** on this codebase — findings that are always wrong here. That last answer saves the reviewer re-litigating the same false positive on every PR, so it's worth asking even though it feels like an odd question.
 
 When the user corrects a detection, take the correction and don't re-litigate it.
 
@@ -72,6 +73,7 @@ Copy `${CLAUDE_PLUGIN_ROOT}/templates/team/project.md` to `.claude/team/project.
 - **Commands must be the real, runnable ones.** Verify each by running it if it's safe and fast (`lint`, `typecheck`, `--version`); don't run a full suite or anything destructive just to check. Say in your summary which ones you actually verified and which you took on trust.
 - **Keep the frontmatter keys exactly as templated.** Three are read by hooks, not just by agents:
   - `stream` — which event stream this project writes to. Missing or renamed, telemetry silently goes to a directory named after the working directory.
+  - `max_parallel_agents` — read by the tech lead as a hard cap on concurrently running agents. Missing means 3.
   - `merge_policy` — **enforced.** Anything other than `autonomous` blocks agents from completing a merge. Missing means gated, which is the safe failure.
   - `trunk_branch` — which branch the merge gate protects. Keep it in sync with the prose section; a wrong value means the gate protects the wrong branch.
 - **The profile must be committed.** Agents read it from inside git worktrees by walking up from the working directory, so an uncommitted profile means each IC worktree falls back to defaults — splitting the event stream and, worse, leaving the merge gate reading a different policy than you set. Tell the user to commit it.

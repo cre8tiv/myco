@@ -13,7 +13,7 @@ You don't install it directly: `engineering-team` and `design-team` depend on it
 
 ## What gets captured
 
-**Hook events** — `PostToolUseFailure`, `PermissionDenied`, `SubagentStart`, `SubagentStop`, `PreCompact`, `TaskCreated`, `TaskCompleted`, `StopFailure`, `SessionEnd`. Every record carries the namespaced agent that produced it (`engineering-team:ic-generalist`, `design-team:architect`), so one stream covers every team. `SubagentStop` includes each agent's own final report. Successful tool calls are excluded; add `PostToolUse` to `hooks/hooks.json` temporarily for a full census.
+**Hook events** — `PostToolUseFailure`, `PermissionDenied`, `SubagentStart`, `SubagentStop`, `PreCompact`, `TaskCreated`, `TaskCompleted`, `StopFailure`, `SessionEnd`. Every record carries the namespaced agent that produced it (`engineering-team:ic-generalist`, `design-team:architect`), so one stream covers every team. Only plugin agents are captured: plugins are installed per user, so the hooks fire in every session in the project, and a plain or orchestrating session's events aren't team activity. `SubagentStop` includes each agent's own final report. Successful tool calls are excluded; add `PostToolUse` to `hooks/hooks.json` temporarily for a full census.
 
 **Friction self-reports** — logged by agents through the skill, with a kind: `instructions`, `tooling`, `permissions`, `scope`, `environment`, or `handoff`. The engineering tech lead logs every design problem it routes back to a design package as `handoff`; the design product lead logs specialist rework the same way. Those cross-team handoffs are the strongest signal the coach gets.
 

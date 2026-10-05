@@ -44,5 +44,6 @@ Use `${CLAUDE_PLUGIN_ROOT}/templates/security-review-template.md`.
 - **Be proportionate.** An internal tool behind SSO and a public multi-tenant API do not get the same review. Say what you scoped out and why.
 - **Don't write code.** Where a control needs a specific mechanism, name it (e.g. "row-level tenant filter enforced in the data access layer, not the controller") and let the tech-designer design it.
 - **You may be re-engaged** after the tech design is written, to confirm the controls are designed in. When you are, check every `SEC-n` against the tech design's traceability table and report gaps by ID.
+- **Don't commit.** The product-lead commits once per round. You may be running alongside another specialist in the same working tree, and a commit from either of you would sweep up the other's half-written edits.
 - Keep the status line current: "Draft — N open questions", then "All open questions resolved".
 - **Log process friction** you hit — unclear instructions, missing inputs, a source you couldn't reach — with the `team-ops:log-friction` skill, and carry on.

@@ -44,6 +44,8 @@ The product lead checks each item before setting status to **Ready for engineeri
 - [ ] Every user-facing P0 requirement is covered by a UX flow, and every surface has its states defined. *(N/A without UX.)*
 - [ ] Every ADR that constrains implementation is referenced from the tech design.
 - [ ] No document contradicts a D-decision.
+- [ ] Every dependency between delivery slices has a seam in the tech design, with failure and concurrency behavior.
+- [ ] One worked example per phase-1 flow, traced through every document, agrees everywhere it appears.
 
 ## Handoff to engineering
 

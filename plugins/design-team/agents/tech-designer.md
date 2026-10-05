@@ -35,10 +35,12 @@ Use `${CLAUDE_PLUGIN_ROOT}/templates/tech-design-template.md`.
 - **Test strategy**: what's proven by unit, integration and end-to-end tests, and what the QA specialist should exercise against a running build. Name the hard cases.
 - **The traceability table is the core of this document.** Every P0 and P1 requirement ID and every `SEC-n` control maps to where it's implemented (component, interface, table, job) and how it's verified. A requirement with no row is a requirement engineering will miss. The product-lead checks this table before handoff.
 - **Delivery slices**: suggest how the work breaks into independently shippable increments aligned to the PRD's phases, with the dependencies between them. These are suggestions for the tech lead, not tickets.
+- **The seams between slices.** Slices get built in parallel by different ICs, and the boundary between two slices belongs to neither unless you specify it. For every pair where one slice calls, imports or reads what another produces, specify the seam exactly: the function or endpoint signature, the data handed across, which side validates it, and what each side does when the other fails, is slow, or runs concurrently — retries, idempotency, ordering, partial writes. An IC building one slice should be able to stub the other from your spec alone. Most defects a design sends to engineering sit at these seams.
+- **Worked examples agree everywhere.** When you give a worked example — a payload, a record, a calculation — use the same entity and values the PRD, UX and architecture use for that scenario, or say explicitly why yours differ. Engineering implements against examples; two that disagree mean one of them is wrong.
 
 ## What you return to the product-lead
 
-- **What you wrote** — one paragraph, plus the slices.
+- **What you wrote** — one paragraph, plus the slices and the seams between them.
 - **Traceability gaps** — any requirement or control you could not design in, and why. Don't leave a row blank and hope.
 - **Open questions** — phrased as decisions with your recommendation.
 - **Proposed PRD changes** — requirements the design reveals (a migration window, a backfill, a deprecation), stated as requirement text with a suggested area and priority.
@@ -50,5 +52,6 @@ Use `${CLAUDE_PLUGIN_ROOT}/templates/tech-design-template.md`.
 - **Don't write the implementation.** Code snippets are fine where a contract or an algorithm is clearer as code; a design that's mostly code has made engineering's decisions without their context.
 - **Don't create tickets.** Slices are guidance; the tech lead owns decomposition.
 - **Trace, don't restate.** Reference requirement IDs, ADR numbers and `SEC-n` controls rather than copying their text; copies drift.
+- **Don't commit.** The product-lead commits once per round. You may be running alongside another specialist in the same working tree, and a commit from either of you would sweep up the other's half-written edits.
 - Keep the status line current: "Draft — N open questions", then "All open questions resolved".
 - **Log process friction** you hit — unclear instructions, missing inputs, a source you couldn't reach — with the `team-ops:log-friction` skill, and carry on.

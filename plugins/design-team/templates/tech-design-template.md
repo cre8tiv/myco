@@ -61,6 +61,8 @@ Table with columns `Requirement | Implemented in | Verified by`. One row for eve
 
 Suggested independently shippable increments, aligned to PRD phases: table with columns `Slice | Scope (requirement IDs) | Depends on | Notes`. These are guidance for the tech lead's decomposition, not tickets.
 
+Then one row per dependency between slices: table with columns `Seam | Producer slice | Consumer slice | Contract (signature and data) | On failure | Under concurrency`. Every "Depends on" entry above needs a seam here; an IC building one side should be able to stub the other from this row alone.
+
 ## 13. Risks
 
 Table with columns `Risk | Mitigation`.
