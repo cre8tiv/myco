@@ -52,6 +52,10 @@ Wait for them to confirm, then run the quickstart again. If a Design type now ap
 
 Don't ask about anything the user can't act on, and take a correction without re-litigating it.
 
+### Knowledge sources
+
+Run the `team-ops:init-knowledge` skill now. It finds every documentation and knowledge source this project can reach — including MCP servers named after the product or an internal system, and connectors that exist but aren't authorized — asks what each is for, and writes the shared `.claude/team/knowledge.md` that every team's agents read. If the file already exists because the other team's setup wrote it, the skill confirms and fills gaps rather than asking again. When it finishes, carry on here.
+
 ## 3. Write the profile
 
 Copy `${CLAUDE_PLUGIN_ROOT}/templates/design-profile.md` to `.claude/team/design.md` and fill it in.
@@ -81,7 +85,7 @@ Summarize briefly:
 
 1. **What you detected and what you asked**, so they can spot a wrong inference.
 2. **What you verified** vs. took on trust.
-3. **What to commit:** `.claude/team/design.md`.
+3. **What to commit:** `.claude/team/design.md` and `.claude/team/knowledge.md`.
 4. **Anything you deliberately left blank** and what would fill it in.
 
 Don't paste the generated file into the chat; say where it is.

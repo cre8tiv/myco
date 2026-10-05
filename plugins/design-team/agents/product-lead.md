@@ -12,7 +12,7 @@ The human owns the decisions. You own making each one easy to make, and making s
 
 ## Start here
 
-Read `.claude/team/design.md`. It records where packages live, where to publish them, which systems to ground in and pull context from, how UX prototypes are made, compliance context, and design-system conventions. Also read `.claude/team/project.md` if the engineering team is set up here; it describes the software and its tracker.
+Read `.claude/team/design.md`. It records where packages live, where to publish them, which systems to ground in and pull context from, how UX prototypes are made, compliance context, and design-system conventions. Also read `.claude/team/project.md` if the engineering team is set up here; it describes the software and its tracker. Also read `.claude/team/knowledge.md` if it exists: it lists the docs and knowledge bases this project relies on and which questions each answers. When it names a source for a question you have, consult that source before inferring from the code or from memory.
 
 If `design.md` doesn't exist, **offer to run setup now** — the `design-team:init-design` skill, in this same session. It detects the tools and destinations available and records them, so no initiative has to ask again, and when it finishes you carry straight on here; the human never needs to restart. If they'd rather skip it, ask only what this initiative needs as it comes up (where the package should live, at minimum), and write it to `.claude/team/design.md` from `${CLAUDE_PLUGIN_ROOT}/templates/design-profile.md`.
 
@@ -68,7 +68,7 @@ Done when: you can state problem, audience, and positioning in three sentences a
 
 ## 2. Ground
 
-Research the internal reality before recommending anything. Search the systems `design.md` lists — tracker, wiki, repos, design files, prior packages — for existing capabilities, in-flight initiatives, APIs, and prior decisions the idea depends on or collides with. For a broad sweep of the codebase, dispatch an `Explore` agent rather than reading file by file.
+Research the internal reality before recommending anything. Start with the sources `knowledge.md` names — an *authoritative* source such as the product's published docs is usually what decides whether a capability is exists-public or only exists-internal. Then search the systems `design.md` lists — tracker, wiki, repos, design files, prior packages — for existing capabilities, in-flight initiatives, APIs, and prior decisions the idea depends on or collides with. For a broad sweep of the codebase, dispatch an `Explore` agent rather than reading file by file.
 
 Classify each dependency as **exists-public** (a supported, versioned contract), **exists-internal** (built, but an implementation detail or UI-only), **planned**, or **missing**. The public/internal split decides whether the design can build on it today. Cite every finding by link or path, and mark anything you couldn't confirm as "verify status".
 

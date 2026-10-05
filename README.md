@@ -45,7 +45,7 @@ claude --plugin-dir myco/plugins        # loads every plugin, dependencies inclu
 
 Each team is run by its lead, started as the session agent. The lead has to be the session agent rather than something you dispatch from another session, because it works in conversation with you.
 
-**The first time you start a lead in a project, it offers to set the project up** — `/init-design` for the design team (where design work lives and gets published, which systems it can reach, how prototypes are made), `/init-team` for the engineering team (tracker, merge policy, build and test commands, environments). Say yes; it runs in the same session and carries on when it's done. The agents ship generic and rely on that profile, so without it they'll ask rather than guess. Setup writes `.claude/team/design.md` or `.claude/team/project.md` — commit it.
+**The first time you start a lead in a project, it offers to set the project up** — `/init-design` for the design team (where design work lives and gets published, which systems it can reach, how prototypes are made), `/init-team` for the engineering team (tracker, merge policy, build and test commands, environments). Say yes; it runs in the same session and carries on when it's done. Either setup also records the project's documentation and knowledge sources — product docs, API references, internal knowledge bases, including MCP servers built for your product — in a shared `.claude/team/knowledge.md` that both teams consult before guessing. The agents ship generic and rely on that profile, so without it they'll ask rather than guess. Setup writes `.claude/team/design.md` or `.claude/team/project.md` — commit it.
 
 ### Design: idea to decided design package
 
@@ -145,7 +145,8 @@ Two more directories your project owns, scaffolded by `/init-team`:
 
 | Path | Committed? | Why |
 | ---- | ---------- | --- |
-| `.claude/team/project.md` | Yes | The profile the agents read |
+| `.claude/team/project.md`, `design.md` | Yes | Each team's profile |
+| `.claude/team/knowledge.md` | Yes | Docs and knowledge sources every team consults, and what each answers |
 | `.claude/qa/plans`, `scripts`, `fixtures` | Yes | Project assets; merge with the change they cover |
 | `.claude/qa/runs/**` captures | No | Heavy; referenced by path from run reports |
 | `.claude/ops/reports/*.md` | Yes | The durable artifact; history enables attribution |

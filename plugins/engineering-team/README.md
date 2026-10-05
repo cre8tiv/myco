@@ -27,7 +27,7 @@ The agents ship **generic**. Everything project-specific lives in one file the h
 
 Every agent reads it on dispatch. Agent definitions are installed plugin content that a plugin update overwrites, so nothing project-specific can live in them. `/init-team` generates the file; a human edits it thereafter.
 
-`/init-team` also scaffolds the QA library the `qa-specialist` builds up over time:
+`/init-team` also records the documentation and knowledge sources agents should consult — API references, internal engineering docs, knowledge bases — in `.claude/team/knowledge.md`, shared with the design team, and scaffolds the QA library the `qa-specialist` builds up over time:
 
 ```
 .claude/qa/                  <- plans, scripts, fixtures, run evidence

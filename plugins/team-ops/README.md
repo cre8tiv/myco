@@ -8,6 +8,7 @@ You don't install it directly: `engineering-team` and `design-team` depend on it
 | --------- | ------------ |
 | `agent-coach` agent | Periodic analysis across every team. Writes one dated report of evidence-backed proposals. Propose-only, enforced. |
 | `log-friction` skill | Agents in any team call `team-ops:log-friction` to record process friction they can name. |
+| `init-knowledge` skill | Records the docs and knowledge bases every team should consult in `.claude/team/knowledge.md`. Run by `/init-design` and `/init-team`; run it directly to refresh. |
 | Hooks | Capture tool failures, permission denials, subagent start/stop, compaction, task lifecycle and session ends — tagged by namespaced agent. |
 
 ## What gets captured
@@ -17,6 +18,14 @@ You don't install it directly: `engineering-team` and `design-team` depend on it
 **Friction self-reports** — logged by agents through the skill, with a kind: `instructions`, `tooling`, `permissions`, `scope`, `environment`, or `handoff`. The engineering tech lead logs every design problem it routes back to a design package as `handoff`; the design product lead logs specialist rework the same way. Those cross-team handoffs are the strongest signal the coach gets.
 
 **Where it lives** — `~/.claude/ops/<stream>/events.jsonl` and `friction.jsonl`, outside the repo, so every git worktree converges on one stream. The stream name is `stream:` in `.claude/team/project.md`, or in `.claude/team/design.md` if there's no `project.md`, looked up by walking up from the working directory. **The profile must be committed**, or each worktree falls back to its own directory name.
+
+## Knowledge sources
+
+`.claude/team/knowledge.md` is the one list, shared by every team, of the documentation and knowledge sources agents consult before inferring from the code or from memory: product docs, API references, internal engineering docs, knowledge graphs, runbooks. Each row says how to reach the source (an MCP server, a URL, or a repo path), **what questions it answers**, which roles use it, how authoritative it is, and whether it needs authorizing.
+
+`/init-knowledge` builds it. It looks at every connected MCP server rather than a fixed list of types, so a server named after your product or an internal system gets found, and asks what each unrecognized one is for. It flags connectors that are configured but not authorized: authorization is per person, so each teammate authorizes once through claude.ai **Settings → Connectors** or `/mcp`.
+
+*Authority* matters most to the design team: a capability documented in an *authoritative* source, such as the product's published docs, is something a design can build on as a supported contract; one found only in an *internal* source isn't.
 
 ## Running the coach
 
@@ -45,6 +54,7 @@ The skill runs `node ".../team-ops/scripts/friction.mjs" ...`. The first time an
 ```
 agents/agent-coach.md
 skills/log-friction/SKILL.md
+skills/init-knowledge/SKILL.md
 hooks/hooks.json            capture + coach guard, via ${CLAUDE_PLUGIN_ROOT}
 scripts/
   capture.mjs               hook sink
@@ -53,5 +63,6 @@ scripts/
   stream.mjs, profile.mjs   stream resolution from the team profiles
 templates/
   report-template.md        the report's fixed format
+  knowledge.md              becomes .claude/team/knowledge.md
   TRENDS.md                 seeded into .claude/ops/reports/ on first run
 ```

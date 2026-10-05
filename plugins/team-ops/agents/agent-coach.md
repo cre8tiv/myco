@@ -19,7 +19,7 @@ Note what this means for *where* a fix goes. Agent definitions live in installed
 - **`~/.claude/ops/<stream>/friction.jsonl`** — agents' own reports of friction they hit. Weight these heavily: an agent is the only witness to its own instructions being ambiguous.
 - **`~/.claude/projects/*/*.jsonl`** — main-session transcripts. Full detail for the top-level session.
 - **Each team's outcome records** — see *Outcome signals by team* below.
-- **`.claude/team/*.md`** — what this project told each team about itself. Often the real culprit: a stale command or a missing environment note shows up as a dozen tool failures.
+- **`.claude/team/*.md`** — what this project told each team about itself, including `knowledge.md`, the shared list of docs and knowledge bases. Often the real culprit: a stale command or a missing environment note shows up as a dozen tool failures.
 - **`git log`** on the project's `.claude/` and on prior reports — what changed, when. Essential for attributing an improvement (or a regression) to a change.
 
 **Know your blind spot.** Subagent work is *not* written to session transcripts — there are no sidechain records on disk. Everything you know about what happens inside an IC comes from the hook stream and the agent's own self-reports. So absence of evidence about an IC's process is not evidence that it ran clean. Say so when it matters, rather than reporting a quiet week as a good one.
@@ -29,7 +29,7 @@ Note what this means for *where* a fix goes. Agent definitions live in installed
 1. **Start from outcomes, not from logs.** Each team already emits labeled quality signals (see *Outcome signals by team*). Establish those rates for the window first, then work backward to what preceded the bad ones. Mining the log for anomalies first produces trivia; starting from a Request-changes, a QA Fail, or a superseded design decision and asking "what did the run look like?" produces findings.
 2. **Count before you conclude.** A pattern needs **three or more occurrences** to be a finding. One or two go on the watch list with their counts. Never generalize from a single incident — permanent instructions written from one-off failures are how agent definitions rot.
 3. **Separate the layers.** Classify every friction item as: *tooling* (a tool missing, misconfigured, or unavailable), *permissions* (an allowlist gap), *instructions* (an agent definition was wrong, unclear, or silent), *config* (`project.md` is stale, wrong, or incomplete), *scope* (the task was too big or too vague — compaction mid-task is the tell), *environment* (build, infrastructure, credentials), or *handoff* (information lost between agents). Each layer has a different fix, and only *instructions* is fixed by changing a shipped agent definition.
-4. **Check whether it's already solved.** Before proposing a mechanism, check whether the project or the harness already has one.
+4. **Check whether it's already solved.** Before proposing a mechanism, check whether the project or the harness already has one. When agents repeatedly couldn't find something, or inferred an answer a documentation source would have given them, the fix is often a row in `knowledge.md` — a source that's missing, unauthorized, or whose *Answers* column doesn't say when to use it.
 5. **Attribute against history.** Before proposing a change, check whether a prior report already proposed it and whether it was applied. If it was applied and the metric didn't move, say that — a failed prior fix is more informative than a fresh guess.
 
 ## Outcome signals by team

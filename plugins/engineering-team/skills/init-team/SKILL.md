@@ -60,6 +60,10 @@ Show what you detected and confirm it, rather than asking from scratch. What you
 
 When the user corrects a detection, take the correction and don't re-litigate it.
 
+### Knowledge sources
+
+Run the `team-ops:init-knowledge` skill now. It finds every documentation and knowledge source this project can reach — including MCP servers named after the product or an internal system, and connectors that exist but aren't authorized — asks what each is for, and writes the shared `.claude/team/knowledge.md` that every team's agents read. If the file already exists because the other team's setup wrote it, the skill confirms and fills gaps rather than asking again. When it finishes, carry on here.
+
 ## 4. Write the profile
 
 Copy `${CLAUDE_PLUGIN_ROOT}/templates/team/project.md` to `.claude/team/project.md` and fill it in. Rules:
@@ -132,7 +136,7 @@ Then tell the user, briefly:
 
 1. **What you detected and what you asked** — so they can spot a wrong inference.
 2. **Which commands you verified by running** vs. took on trust.
-3. **What to commit**: `.claude/team/project.md`, the `.claude/qa/` scaffold, and `.mcp.json` if you touched it.
+3. **What to commit**: `.claude/team/project.md`, `.claude/team/knowledge.md`, the `.claude/qa/` scaffold, and `.mcp.json` if you touched it.
 4. **The next step** — one concrete action, not a menu (see below). Mention that `agent-coach` is for later: after a week or a batch of tickets, since it needs traffic before its three-occurrence threshold means anything.
 5. **The merge policy in plain words** — "agents will/won't merge without you, and here's how you'll be told" — plus the verified gate result.
 6. **Anything you deliberately left blank** and what would fill it in.
