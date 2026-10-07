@@ -9,7 +9,9 @@ You don't install it directly: `engineering-team` and `design-team` depend on it
 | `agent-coach` agent | Periodic analysis across every team. Writes one dated report of evidence-backed proposals. Propose-only, enforced. |
 | `log-friction` skill | Agents in any team call `team-ops:log-friction` to record process friction they can name. |
 | `init-knowledge` skill | Records the docs, knowledge bases and other codebases every team should consult in `.claude/team/knowledge.md`. Run by `/init-design` and `/init-team`; run it directly to refresh. |
-| Hooks | Capture tool failures, permission denials, subagent start/stop, compaction, task lifecycle and session ends — tagged by namespaced agent. |
+| `start-work` skill | Leads name the unit of work they're on — `<package>/round-<n>`, `<package>/phase-<n>`, a ticket — so cost can be attributed to it. The call is the record. |
+| `cost-report` skill | What the work cost: per package and round, per ticket or phase, per agent, model or day. |
+| Hooks | Capture tool failures, permission denials, subagent start/stop, compaction, task lifecycle and session ends — tagged by namespaced agent — and snapshot token usage. |
 
 ## What gets captured
 
@@ -28,6 +30,18 @@ You don't install it directly: `engineering-team` and `design-team` depend on it
 A *Codebases* section lists the repositories the work touches beyond this one, each with a role: *system* (code this work changes, living elsewhere), *contract* (built against, not changed) or *reference* (prior art). Each is identified by its remote URL and ref, with an optional local path relative to the repository root. All of them are read-only to agents. Design packages record the commit each was grounded at.
 
 *Authority* matters most to the design team: a capability documented in an *authoritative* source, such as the product's published docs, is something a design can build on as a supported contract; one found only in an *internal* source isn't.
+
+## Cost
+
+**What gets recorded.** When a team lead session ends, and when each team agent finishes, `scripts/usage.mjs` reads the session's transcripts — Claude Code keeps one per session and one per subagent, and every model response in them carries its token counts — and appends the totals per agent, unit of work and model to `~/.claude/ops/<stream>/usage.jsonl`. In a lead's session everything it spawned counts, built-in helpers like `Explore` included; elsewhere only team agents do.
+
+**Attribution.** Leads invoke `team-ops:start-work` with a tag as they go — the product lead per decision round (`order-exceptions/round-2`), the tech lead per phase or ticket. The call lands in the transcript with a timestamp, and the lead's usage after it, and that of agents it starts, belongs to that tag. The tech lead also prefixes each agent's task description with its ticket (`[CLOUD-123] …`), so tickets within a phase are costed separately.
+
+**Append-only, never overwritten.** Snapshots are cumulative per session and agent; the report reads only the latest of each, so a resumed session or a repeated hook supersedes rather than double-counts. A later round adds new records. Tokens are what's stored; dollars are computed at report time from `scripts/prices.json`, so correcting a price reprices history.
+
+**Gaps it closes itself.** A headless run killed before its session ended never fires `SessionEnd`. The report re-reads any known session whose transcripts changed since its last snapshot, as long as Claude Code hasn't cleaned the transcripts up yet.
+
+**How accurate.** Input and cache token counts match Claude Code's own accounting exactly; output tokens per response run somewhat lower than its session totals, so estimates tend to be a few percent to ~10% low. They're API list prices — a Team or Max subscription bills differently.
 
 ## Running the coach
 
@@ -56,11 +70,17 @@ The skill runs `node ".../team-ops/scripts/friction.mjs" ...`. The first time an
 ```
 agents/agent-coach.md
 skills/log-friction/SKILL.md
+skills/start-work/SKILL.md
+skills/cost-report/SKILL.md
 skills/init-knowledge/SKILL.md
 hooks/hooks.json            capture + coach guard, via ${CLAUDE_PLUGIN_ROOT}
 scripts/
   capture.mjs               hook sink
   friction.mjs              self-report writer, called by the skill
+  usage.mjs                 token usage snapshot, on SubagentStop and SessionEnd
+  usage-lib.mjs             transcript parsing, attribution, pricing
+  cost.mjs                  the cost report, called by cost-report
+  prices.json               API list prices per model
   coach-guard.mjs           propose-only enforcement
   stream.mjs, profile.mjs   stream resolution from the team profiles
 templates/

@@ -112,6 +112,7 @@ Two things to hold QA to:
 
 ## Working agreements
 
+- **Name the work you're on** with the `team-ops:start-work` skill, so what it costs can be reported: `<package-slug>/phase-<n>` when building from a design package, or the ticket or epic key otherwise. Invoke it when you start or resume, and again if the work changes. **Start every agent's task description with its ticket key in brackets** — `[CLOUD-123] implement retry` — so each ticket's cost is reported on its own.
 - Keep IC task descriptions scoped enough to reduce context: file paths, acceptance criteria, and constraints, not the whole project history.
 - If an IC returns something wrong, don't just fix it yourself — send it back with specific feedback first. Only take it over if it's stuck twice on the same issue.
 - If an IC goes silent or errors out mid-task, respawn it with the task context preserved rather than losing the work.

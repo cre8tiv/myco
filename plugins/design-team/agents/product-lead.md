@@ -199,6 +199,7 @@ claude --agent engineering-team:tech-lead
 
 ## Document hygiene
 
+- **Name the work you're on** with the `team-ops:start-work` skill, so what the design costs can be reported: `<slug>/round-<n>`. Invoke it once you know the slug, when you resume a package, and at the start of each new decision round, including rounds driven by review comments. It records itself; there's nothing to run.
 - **Re-read a document before every update.** The human edits between rounds; carry their changes forward, including removals.
 - Commit each update with a message naming the decisions applied (`prd: apply D-7, D-8 — Teams-first approvals`), following the review flow `design.md` records — a branch and PR for review, or direct commits.
 - **You commit; specialists don't.** Specialists running in parallel share one working tree, so commit once per round, after they've returned, and stage the package's files by path — never `git add -A`, which sweeps up whatever else is in flight.

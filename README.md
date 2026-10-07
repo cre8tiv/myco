@@ -90,6 +90,18 @@ Every few weeks, or after a batch of work, ask for a process report from any ses
 
 It reads how both teams actually worked — including design problems engineering had to send back — and writes a report of proposed changes to `.claude/ops/reports/`. It proposes; you decide what to apply.
 
+### What it cost
+
+team-ops records the token usage of every lead session and team agent, tagged with the work it was for: leads name a design package round or an engineering phase as they go, and the tech lead tags each agent with its ticket. Ask from any session in the project:
+
+```
+> /cost-report order-exceptions        # a package: each round and phase, and the total
+> /cost-report CLOUD-123               # one ticket
+> /cost-report --by agent --since 2026-10-01
+```
+
+Figures are API-equivalent estimates at list prices, so on a Team or Max subscription they're a measure of effort rather than a bill. The record is an append-only log in `~/.claude/ops/<stream>/usage.jsonl`, outside the repo: later rounds add to it and nothing is overwritten, so a package's total always includes every round. `agent-coach` uses the same figures to weigh its findings by what they cost.
+
 ### Knowledge sources
 
 `/init-knowledge` records the documentation and knowledge sources every team should consult — product docs, API references, internal engineering docs, knowledge bases, runbooks — in one shared file, `.claude/team/knowledge.md`. Both setup skills run it, so you don't need to on first use; the second one confirms the list rather than asking again.
