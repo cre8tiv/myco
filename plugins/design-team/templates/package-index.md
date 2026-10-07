@@ -9,10 +9,11 @@ This becomes `docs/design/<slug>/README.md`: the first file anyone opens, and th
 
 | | |
 | --- | --- |
-| **Status** | <Framing | Drafting | In decision loop | Ready for engineering> |
+| **Status** | <Framing | Drafting | In decision loop | In review | Ready for engineering> |
 | **Owner** | <name> |
 | **Last updated** | <date> |
 | **Adopted from** | <source link, its version or date, and when it was fetched — or "new"> |
+| **Review page** | <claude.ai artifact link, once published — or "not published"> |
 
 <One paragraph: what this is and why, from the PRD's problem and positioning.>
 ```
@@ -52,7 +53,16 @@ The product lead checks each item before setting status to **Ready for engineeri
 - [ ] Every requirement names its actor (or "—" for system-wide), and every actor has at least one key scenario.
 - [ ] Every actor, human or not, has an identity and permissions row in the security review. *(N/A without a security review.)*
 - [ ] Each phase-1 scenario, traced through every document, agrees everywhere it appears: same actor, entity, values, field names, error codes and states.
+- [ ] Reviewed: the review page's latest round has no thread still needing a decision, and sign-off is recorded. *(N/A when `design.md` sets `review_pages: none`.)*
 - [ ] Every codebase grounded in is recorded with its commit, and every delivery slice names the one repository it changes.
+
+## Review
+
+Written by the `publish-review` skill. The review page is rendered from this package, with `review.md` as its Overview; comments on it feed the next decision round.
+
+Table with columns `Round | Published | Commit | Threads (new / addressed / still open) | Decisions`. One row per publish.
+
+**Sign-off:** who approved, when, and the round and commit they approved — or "pending".
 
 ## Handoff to engineering
 

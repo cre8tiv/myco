@@ -61,7 +61,11 @@ Then tell it where you're starting from:
 > Resume docs/design/teams-approvals/                               # a package already in progress
 ```
 
-It frames and grounds the work, writes the PRD, dispatches the architect, UX designer, security reviewer and tech designer as their inputs become ready, and runs one decision loop with you over every open question. It finishes with a package in `docs/design/<slug>/` marked **Ready for engineering**.
+It frames and grounds the work, writes the PRD, dispatches the architect, UX designer, security reviewer and tech designer as their inputs become ready, and runs one decision loop with you over every open question.
+
+The package it writes is markdown for engineering. For people, it then publishes a **review page**: a claude.ai artifact with an Overview written for readers who haven't opened the package, followed by every document rendered from the markdown. Share the page, and have reviewers comment on it. When you tell the lead feedback is in, it reads the comments and turns them into another decision round. Each round republishes to the same link. A **design hub** page lists every package in the project with its status and review link, so the project has one link to bookmark. Pages are private until you share them.
+
+It finishes with a signed-off package in `docs/design/<slug>/` marked **Ready for engineering**.
 
 ### Engineering: package or ticket to merged code
 
@@ -124,6 +128,7 @@ CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 claude -p --agent engineering-team:tech-l
 
 - **Set `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`.** In `-p` mode Claude Code waits only 10 minutes by default for background work after the final turn, then stops it. The leads dispatch long-running ICs, reviewers and QA in the background, so without this a QA run or an IC can be killed partway through. `0` waits until they finish. Requires Claude Code v2.1.182 or later.
 - **Resume interrupted runs with `--resume <session-id>`.** A network drop or a memory kill doesn't lose the work: the tech lead rebuilds its state from the tracker and GitHub when it resumes.
+- **Review pages need an interactive session.** A `-p` run has no Artifact tool, so the design lead renders the review page to a file and leaves publishing to you. Run `/publish-review` in an interactive session to publish it.
 - **Mind the machine.** Each parallel IC or QA run is a worktree with its own dependency install and test run. `max_parallel_agents` in `.claude/team/project.md` caps how many run at once; lower it if runs get stopped for low memory.
 
 ### Re-running setup

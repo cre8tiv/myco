@@ -1,6 +1,6 @@
 ---
 name: init-design
-description: Set up the design-team agents for this project. Detects where design documents already live, which systems and codebases are reachable for grounding and context (tracker, wiki, Figma, Notion, Linear, and the repositories the designs will change or build against), where packages should be published (repo only, Confluence, Notion, Linear), whether Claude Design is available for prototypes (walking the user through the one-time /design consent if needed), and which design systems and existing design artifacts the ux-designer should work within; asks only what it cannot infer; then writes .claude/team/design.md. Use after installing the design-team plugin, when the product-lead reports the profile is missing, or when destinations, sources or the design system have changed.
+description: Set up the design-team agents for this project. Detects where design documents already live, whether packages get published as readable review pages with a design hub, which systems and codebases are reachable for grounding and context (tracker, wiki, Figma, Notion, Linear, and the repositories the designs will change or build against), where packages should be published (repo only, Confluence, Notion, Linear), whether Claude Design is available for prototypes (walking the user through the one-time /design consent if needed), and which design systems and existing design artifacts the ux-designer should work within; asks only what it cannot infer; then writes .claude/team/design.md. Use after installing the design-team plugin, when the product-lead reports the profile is missing, or when destinations, sources or the design system have changed.
 ---
 
 # init-design
@@ -41,6 +41,7 @@ Use `AskUserQuestion`, batching related questions, and offer what you detected a
 - **Prototype mode**, when there's a real choice: `claude-design` if a Design type is available, `html` otherwise, `wireframes` if the team wants no prototypes.
 - **Which design system is canonical**, when the inventory found more than one — a claude.ai design system, a Figma library and a component package can all exist and disagree. Engineering builds from the code, so recommend the repo's design system unless the user says the others lead.
 - **Which existing design artifacts are references** for this product, from the ones you found.
+- **Review pages.** Whether to publish each package as a readable page people can share and comment on, with a design hub listing every package. Recommend `artifact` if you have the `Artifact` tool; otherwise record `none` and say publishing needs an interactive session signed in to claude.ai. Ask for the **product name** used in page titles (`<product> <initiative> design`), offering the one the repo or `project.md` uses, and who besides the sign-off names usually reviews. Leave `review_hub` as `none`: the first publish creates the hub and records its link.
 
 ### Claude Design access
 
@@ -64,7 +65,7 @@ For the design team, its question **"is the code this work changes in this repos
 Copy `${CLAUDE_PLUGIN_ROOT}/templates/design-profile.md` to `.claude/team/design.md` and fill it in.
 
 - **Replace or remove every placeholder.** An agent will read a leftover `<...>` as literal.
-- **Keep the frontmatter keys exactly as templated.** `stream` is read by the team-ops telemetry hooks — if both profiles exist it must match `project.md`, or the teams' activity splits across two streams and cross-team handoffs become invisible. `packages_dir`, `publish_to` and `ux_prototypes` are read by the agents.
+- **Keep the frontmatter keys exactly as templated.** `stream` is read by the team-ops telemetry hooks — if both profiles exist it must match `project.md`, or the teams' activity splits across two streams and cross-team handoffs become invisible. `packages_dir`, `publish_to`, `ux_prototypes`, `review_pages`, `product_name` and `review_hub` are read by the agents.
 - **Name tools and locations exactly.** "Publish to Confluence" is not actionable; a space key, a parent page and a tool prefix are.
 - **Prefer honest gaps over invention.** "No design system" is useful. A plausible-looking Figma URL nobody verified is a trap.
 - **The profile must be committed.** Tell the user.

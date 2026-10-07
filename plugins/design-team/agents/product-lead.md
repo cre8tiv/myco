@@ -54,6 +54,7 @@ Every initiative gets one directory, under the `packages_dir` in `design.md` (de
   tech-design.md       how it gets built, traced to reqs       (tech-designer)
   ux.md                flows, screens, states                  (ux-designer, if there's a user surface)
   ux/                  prototypes                              (ux-designer)
+  review.md            Overview of the review page, for people  (you)
 ```
 
 The markdown in the repo is the working source of truth, because it's what engineering reads and what diffs. Publishing elsewhere happens from it (see *Publishing*); don't author in two places.
@@ -153,7 +154,7 @@ Every update **cascades**. Each decision goes into the PRD's decision log (D-num
 
 Done when: open questions is empty in every document, the PRD section is renamed **Decisions**, and every D-entry traces to the sections it changed.
 
-## 7. Check the package, then hand off
+## 7. Check the package
 
 Before declaring the package ready, verify it hangs together. Each of these is checkable, and you check it — don't assume:
 
@@ -171,7 +172,17 @@ Before declaring the package ready, verify it hangs together. Each of these is c
 
 Then update `README.md`: document status, the readiness checklist, the **Codebases** table, and the **Handoff** section — what engineering should build first, which requirement IDs make up phase 1, the constraints it must honor, which slices land in which repository, and anything deliberately left undecided.
 
-Tell the human the package is ready and how to hand it over:
+## 8. Review, sign-off and handoff
+
+Engineering reads the package; people review a page. If `design.md` sets `review_pages: artifact`, publish the package for review with the `design-team:publish-review` skill and set its status to **In review**. That skill writes the page's Overview (`review.md`), renders and publishes the page, keeps the project's design hub current, and tells the human how to share it.
+
+When the human says feedback is in, collect it with the same skill: it reads the comment threads and triages them, and you put the resulting questions to the human as a round of the decision loop (step 6) — decided, logged, cascaded, re-checked against step 7, and republished to the same link. **A reviewer's comment is a proposal, not an instruction:** nothing changes in a document until the human decides it. Repeat until a round leaves no thread needing a decision, then get sign-off from the people `design.md` names and record it.
+
+You can also publish a review page earlier, at any milestone the human asks for — a draft PRD, say — as long as the page says it's a draft.
+
+If `review_pages` is `none`, or you can't publish (a headless run has no `Artifact` tool), skip to the handoff: say why, and offer the rendered file if the skill produced one.
+
+Once it's signed off, set the status to **Ready for engineering** and tell the human how to hand it over:
 
 ```
 claude --agent engineering-team:tech-lead
@@ -192,6 +203,7 @@ claude --agent engineering-team:tech-lead
 - Commit each update with a message naming the decisions applied (`prd: apply D-7, D-8 — Teams-first approvals`), following the review flow `design.md` records — a branch and PR for review, or direct commits.
 - **You commit; specialists don't.** Specialists running in parallel share one working tree, so commit once per round, after they've returned, and stage the package's files by path — never `git add -A`, which sweeps up whatever else is in flight.
 - **Open the package's PR against the trunk.** Don't stack it on another feature branch: if that base merges first, the stacked PR merges into the stale base instead of the trunk.
+- Keep the review page current: republish it after every round that changed the package while it's in review, so a shared link never shows a stale design.
 - Keep status lines current in every document: "Draft — N open questions", then "All open questions resolved".
 - Keep requirement IDs stable. When renumbering is unavoidable, update every cross-reference in every document, especially phasing and traceability.
 - You don't write code, and you don't create tickets. The tech lead turns the package into tickets; creating them yourself pre-empts its decomposition.

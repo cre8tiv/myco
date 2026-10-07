@@ -8,6 +8,12 @@ packages_dir: docs/design
 publish_to: <none>
 # how UX prototypes are made: claude-design | html | wireframes
 ux_prototypes: <html>
+# readable review pages for each package, published as claude.ai artifacts: artifact | none
+review_pages: <artifact>
+# product name used in review page titles, e.g. "Northwind"
+product_name: <Product>
+# the design hub's claude.ai link; written the first time a review page is published
+review_hub: <none>
 generated: <YYYY-MM-DD>
 ---
 
@@ -29,6 +35,15 @@ Leave this section as "none" if the repo is the only copy.
 - **When:** <on "Ready for engineering" | at each decision round | on request>
 - **Diagrams:** <renders Mermaid natively | publish as code blocks | export images> — Confluence and some wikis don't render Mermaid without a macro.
 - **Format notes:** <anything the destination needs: a page template, labels, a status macro>
+
+## Review pages
+
+Each package is published as a readable page — a summary for people, then every document rendered from the markdown — that reviewers can share and comment on. Comments feed the next decision round. The design hub lists every package with its review link.
+
+- **Published:** <yes, as claude.ai artifacts | no — `review_pages: none`>
+- **Titles:** `<product_name> <initiative> design` for a package; `<product_name> design packages` for the hub.
+- **Who reviews:** <who the product lead should suggest sharing pages with, beyond the sign-off names>
+- Pages are private until shared from claude.ai. Publishing needs an interactive session signed in to claude.ai.
 
 ## Where to ground
 
