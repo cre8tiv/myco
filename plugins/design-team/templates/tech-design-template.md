@@ -37,7 +37,7 @@ Schema changes, as the project expresses them. For each migration: reversible or
 
 ## 6. Key flows
 
-The flows from the architecture, now at implementation depth: which module does what, where transactions begin and end, retries, timeouts, and what happens on each failure.
+The flows from the architecture, now at implementation depth, each naming the actor and scenario (`SC-n`) it serves: which module does what, where transactions begin and end, retries, timeouts, and what happens on each failure.
 
 ## 7. Configuration and feature flags
 
@@ -53,7 +53,7 @@ The logs, metrics and alerts that show this working — and that show it failing
 
 ## 10. Test strategy
 
-What unit, integration and end-to-end tests prove, and what the QA specialist should exercise against a running build. Name the hard cases explicitly: concurrency, partial failure, large data, permission boundaries.
+What unit, integration and end-to-end tests prove, and what the QA specialist should exercise against a running build — by scenario, as which actor. Name the hard cases explicitly: concurrency, partial failure, large data, permission boundaries.
 
 ## 11. Traceability
 

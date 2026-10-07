@@ -27,11 +27,27 @@ What this is and isn't: product feature, enablement tool, internal tool, or serv
 
 Goals are outcomes, not features. Non-goals record every scope cut decided during the loop, each written as a statement ("One-click approval from Teams").
 
-## 4. Personas
+## 4. Actors
 
-Table of persona and need. Include internal personas (sales, field engineering, support) when the thing is a sales or enablement asset.
+Everyone and everything that uses, triggers or is affected by this: table with columns `ID | Actor | Kind | Context | Need | Identity & permissions`. IDs are `A-1`, `A-2`; every other document refers to actors by ID.
 
-## 5. Solution overview
+- **Name a specific actor, never "user".** "Warehouse picker", "tenant admin", "support engineer", "the customer's AI agent". "User" gives a reviewer nothing to evaluate the design against.
+- **Kind** is *human*, *AI agent*, or *system* (an integration, a scheduled job, another service). List the non-human actors explicitly. They're the ones designs most often forget, and an AI agent needs different things from a person: no UI, machine-readable errors, safe retries, rate limits, a service identity.
+- **Context** is what about their situation shapes the design: where they are, when and how often they act, the device or channel, how many act at once, and their constraints. "At shift start, on a shared handheld, wearing gloves, alongside 200 others" changes the design; "uses the app" doesn't.
+- **Identity & permissions** says how the actor is identified and what it may do. The security review threat-models each one.
+- Include internal actors (sales, field engineering, support) when the thing is a sales or enablement asset.
+
+## 5. Key scenarios
+
+The situations the design has to handle, each told from one actor's point of view with concrete detail. Number them `SC-1`, `SC-2`, and write each as:
+
+> **SC-1 — <title>** (A-2, requirements PCK-1, PCK-3)
+> As A-2, a warehouse picker, at 9:00 at shift start on a shared handheld, I scan a tote and confirm the pick in under five seconds, while 200 other pickers do the same, so the wave starts on time.
+
+- **Concrete values, not placeholders:** the actual entity, quantities, times and data. These are the worked examples the package is checked against: the same values should appear wherever the scenario does in UX, architecture and tech design.
+- **At least one scenario per actor**, and one per phase-1 flow.
+- **Include the unhappy ones** that matter: the agent retrying after a timeout, the admin without permission, the shift-start peak.
+## 6. Solution overview
 
 A summary. When the package includes an architecture document, keep this to the shape of the solution and link [architecture.md](architecture.md) for the detail rather than duplicating it.
 
@@ -39,40 +55,40 @@ A summary. When the package includes an architecture document, keep this to the 
 - **Processing stages:** what happens in order, and what happens once versus per item.
 - **Extension points** (if any): the plugin or integration model, its contract, and its versioning policy.
 
-## 6. Functional requirements
+## 7. Functional requirements
 
-One table per area, with columns `ID | Requirement | Priority`. IDs use a short area prefix (COL-1, APR-3). Priorities are P0 (first release), P1, and P2. Each requirement is testable in one sentence.
+One table per area, with columns `ID | Requirement | Actor | Priority`. IDs use a short area prefix (COL-1, APR-3). Priorities are P0 (first release), P1, and P2. Each requirement is testable in one sentence. *Actor* is the actor ID or IDs the requirement serves; use "—" only for requirements that apply to the whole system regardless of who acts, such as retention or availability.
 
 Controls required by the security review go in their own `SEC` area, keeping the security review's `SEC-n` IDs, so they are phased like every other requirement.
 
-## 7. Data model and mapping
+## 8. Data model and mapping
 
 The core record, as a code block with field comments that mark where each field comes from and when it is set. Map every field to each external system the thing writes into. Explain any field whose value is detected or defaulted, including the default and why it is safe.
 
-## 8. Dependencies
+## 9. Dependencies
 
 Table with columns `Dependency | Status (as of <date>) | Needed for`, using the grounding classification: exists-public, exists-internal, planned, missing, or verify status. For each dependency, say whether it blocks and which phase needs it.
 
-## 9. Phasing
+## 10. Phasing
 
 Table with columns `Phase | Scope (requirement IDs) | Exit criteria`. Every requirement ID appears in exactly one phase, and every exit criterion is observable.
 
-## 10. Success metrics
+## 11. Success metrics
 
 How success is measured, and by what mechanism, especially when the design rules out telemetry.
 
-## 11. Risks
+## 12. Risks
 
 Table with columns `Risk | Mitigation`. Prefix risks the human chose to live with as **Accepted risk:**.
 
-## 12. Open questions
+## 13. Open questions
 
 A numbered list. Each item is phrased as a decision, with enough context to answer it. Once the list is empty, this section becomes:
 
-## 12. Decisions
+## 13. Decisions
 
 Table with columns `# | Question | Decision`. Each decision references the sections it changed.
 
-## 13. References
+## 14. References
 
 Links to every source cited during grounding.

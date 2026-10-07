@@ -38,7 +38,9 @@ Table with columns `ID | Control | Mitigates | Priority | Verified by`. IDs are 
 
 ## 7. Authentication and authorization
 
-Who can do what, how identity is established, and where each permission check is enforced. Name the enforcement point — a check in the wrong layer is a common way a correct policy fails.
+Table with columns `Actor | Identity (how it's established) | Trust level | May do | Enforced at`, one row per PRD actor ID, human or not. An AI agent or system actor needs an identity story as much as a person does: whose credentials it acts with, and what limits its blast radius. An actor with no row, or a row nobody can fill in, is a finding.
+
+Name the enforcement point for each permission — a check in the wrong layer is a common way a correct policy fails.
 
 ## 8. Secrets, audit and logging
 

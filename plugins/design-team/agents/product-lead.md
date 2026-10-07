@@ -64,7 +64,9 @@ The markdown in the repo is the working source of truth, because it's what engin
 
 Establish what the thing *is* before what it does: the problem, who has it, the business or adoption question behind it, and its **positioning** (product feature, enablement tool, internal tool, service) and owner. Positioning drives ownership, packaging, dependencies, and scope, and it is the framing most likely to shift. Whenever the human reframes ("this feels more like X than Y"), restate the new positioning back and re-check what it changes before continuing.
 
-Done when: you can state problem, audience, and positioning in three sentences and the human agrees.
+**Name the actors.** Who has the problem is rarely one "user". List each actor specifically: the people, AI agents and systems that will use, trigger or be affected by this, and the context they act in, such as when, how often, on what device or channel, how many at once, and under what constraints. Context is what lets anyone evaluate a design: a picker at shift start on a shared handheld and an AI agent calling an API need different things from the same feature. Ask the human about any actor whose context you'd otherwise be guessing.
+
+Done when: you can state problem, actors, and positioning in three sentences and the human agrees.
 
 ## 2. Ground
 
@@ -96,7 +98,7 @@ Done when: the human has accepted, redirected, or refined the recommendation and
 
 Write `prd.md` from `${CLAUDE_PLUGIN_ROOT}/templates/prd-template.md` — or, when adopting, from the mapped original. Leave the human-summary block at the top empty for the human to write.
 
-Give every requirement an ID and a priority, and place every requirement in a phase. Close with **Open questions**: each one phrased as a decision someone can make ("Which approval system first?"), never a topic ("Approvals").
+Write the **Actors** table with IDs and context, and the **Key scenarios**: each told from one actor's point of view, with concrete values, at least one per actor and per phase-1 flow, including the unhappy ones that matter. The scenarios are the worked examples the whole package is checked against in step 7, so choose them deliberately. Give every requirement an ID, a priority and its actor, and place every requirement in a phase. Close with **Open questions**: each one phrased as a decision someone can make ("Which approval system first?"), never a topic ("Approvals").
 
 Create `README.md` from `${CLAUDE_PLUGIN_ROOT}/templates/package-index.md` at the same time, listing the documents you agreed in step 3.
 
@@ -109,7 +111,7 @@ Dispatch each specialist **once the questions that would change its output are d
 | Specialist | Needs decided first | Can run alongside |
 | ---------- | ------------------- | ----------------- |
 | `architect` | positioning, deployment model, integration points, P0 requirements | `ux-designer` |
-| `ux-designer` | personas, the core user-facing requirements | `architect` |
+| `ux-designer` | actors and key scenarios, the core user-facing requirements | `architect` |
 | `security-reviewer` | `architecture.md` (it threat-models the components and data flows), plus `ux.md` if there is one | — |
 | `tech-designer` | `architecture.md` and `security-review.md`; P0 requirements stable | — |
 
@@ -161,9 +163,11 @@ Before declaring the package ready, verify it hangs together. Each of these is c
 - Every user-facing P0 requirement is covered by at least one UX flow, and every UX surface lists its empty, loading, error and permission states.
 - Every ADR that constrains implementation is referenced from the tech design.
 - No document has open questions, and no document contradicts a D-decision.
+- Every requirement names its actor, or "—" if it applies to the whole system, and every actor has at least one key scenario.
+- Every actor, human or not, has an identity and permissions row in the security review.
 - Every dependency between delivery slices has a seam in the tech design: signature, data handed across, behavior on failure and under concurrency.
 - Every codebase the design was grounded in is recorded with its commit, and every delivery slice names the one repository it changes. Slices in a repository other than this one are called out in the handoff, since this repository's engineering team won't build them.
-- **The documents agree with each other.** The checks above confirm each piece exists; they don't confirm the pieces match, and a package can pass all of them and still send engineering dozens of gaps. For each phase-1 flow, follow one worked example end to end through the PRD, UX, architecture and tech design: the same entity, values, field names, error codes and states should appear everywhere it does. Each disagreement is a gap engineering will hit — resolve it now, through the relevant specialist.
+- **The documents agree with each other.** The checks above confirm each piece exists; they don't confirm the pieces match, and a package can pass all of them and still send engineering dozens of gaps. Follow each phase-1 key scenario end to end through the PRD, UX, architecture, security review and tech design: the same actor, entity, values, field names, error codes and states should appear everywhere it does. Each disagreement is a gap engineering will hit — resolve it now, through the relevant specialist.
 
 Then update `README.md`: document status, the readiness checklist, the **Codebases** table, and the **Handoff** section — what engineering should build first, which requirement IDs make up phase 1, the constraints it must honor, which slices land in which repository, and anything deliberately left undecided.
 

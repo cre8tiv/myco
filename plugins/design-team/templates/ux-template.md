@@ -14,7 +14,7 @@ Use these sections in this order. Guidance under each heading is for you; replac
 
 ## 1. Users and jobs
 
-For each persona in the PRD that touches this surface: the job they're trying to do, how often, and what "done" feels like to them.
+For each PRD actor that touches this surface, by actor ID: the job they're trying to do, how often, the context that shapes it (device, environment, interruptions, how many at once), and what "done" feels like to them. An AI agent or system actor with no visual surface still belongs here if it reaches the product through an interface this design shapes — a CLI, an API's error messages, a notification.
 
 ## 2. Existing patterns reused
 
@@ -26,11 +26,11 @@ Table with columns `ID | Surface | Type | Purpose`. IDs are `S-1`, `S-2`. Type i
 
 ## 4. Flows
 
-One Mermaid flowchart per job, each titled with the requirement IDs it satisfies. Show where it can fail and where the user can abandon. Every flow ends in success, a recoverable error with a next step, or a flagged dead end.
+One Mermaid flowchart per job, each titled with the actor ID, the PRD scenario (`SC-n`) it walks through, and the requirement IDs it satisfies. Use the scenario's concrete values in the flow. Show where it can fail and where the user can abandon. Every flow ends in success, a recoverable error with a next step, or a flagged dead end.
 
 ## 5. States
 
-For every surface: table with columns `State | What the user sees | What they can do next`. At minimum: empty, loading, partial, error, success, no-permission. This table is what QA tests against.
+For every surface: table with columns `State | What the user sees | What they can do next`. At minimum: empty, loading, partial, error, success, no-permission. Where actors see a surface differently, say which actor each row is for; the no-permission state always names the actor who hits it. This table is what QA tests against.
 
 ## 6. Wireframes
 

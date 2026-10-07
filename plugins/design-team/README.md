@@ -38,13 +38,13 @@ The product lead has to run as the session agent rather than being dispatched fr
 
 ## How it works
 
-1. **Frame** — what the thing is, who has the problem, and its positioning. Confirmed with you before going further.
+1. **Frame** — what the thing is, who has the problem, and its positioning. Who has it means named **actors** — people, AI agents and systems — with the context they act in, not a generic "user". Confirmed with you before going further.
 2. **Ground** — searches the tracker, wiki, design files and code for what already exists, classifying each dependency as exists-public, exists-internal, planned, or missing, with sources.
 3. **Recommend** — a position with named wrinkles, plus which documents this work needs. A small change gets a smaller package.
-4. **Draft** — the PRD, with IDed and phased requirements and open questions phrased as decisions.
+4. **Draft** — the PRD, with actors, key scenarios told from each actor's point of view, IDed and phased requirements that name their actor, and open questions phrased as decisions.
 5. **Dispatch** — each specialist as soon as the questions that would change its output are decided. Independent specialists run in parallel.
 6. **Decision loop** — questions from every document, merged into one list, put to you in rounds. Every decision is logged once, in the PRD; a reversed decision is superseded, never rewritten.
-7. **Check and hand off** — traceability is verified across documents, then the package is marked **Ready for engineering**.
+7. **Check and hand off** — traceability is verified across documents, each phase-1 scenario is traced through every document to check they agree, then the package is marked **Ready for engineering**.
 
 **Only the product lead talks to you.** Specialists write their document and return questions, missing requirements and consequential decisions to the lead, which puts them to you. You get one conversation and one decision log, not five.
 
@@ -53,7 +53,7 @@ The product lead has to run as the session agent rather than being dispatched fr
 ```
 <packages_dir>/<slug>/     (docs/design/ by default)
   README.md            index, readiness checklist, published copies, engineering handoff
-  prd.md               requirements, phasing, decision log
+  prd.md               actors, scenarios, requirements, phasing, decision log
   architecture.md      components, flows, Mermaid diagrams, ADRs
   security-review.md   threat model, SEC-n controls
   tech-design.md       contracts, data, rollout, test strategy, traceability
@@ -63,7 +63,7 @@ The product lead has to run as the session agent rather than being dispatched fr
 
 The markdown in the repo is the working source of truth. If `design.md` names a destination — Confluence, Notion, Linear — the product lead publishes there at the milestones it records, and checks the published copy for edits made there before overwriting it.
 
-**IDs trace across documents.** PRD requirements carry area-prefixed IDs (`APR-3`). Security controls are `SEC-n`, and become PRD requirements so they're phased. The tech design's traceability table maps every P0/P1 requirement and every `SEC-n` control to where it's implemented and how it's verified. The readiness checklist is checked against those tables before handoff.
+**IDs trace across documents.** Actors are `A-n` and key scenarios `SC-n`: UX flows, architecture sequence diagrams and the tech design's flows and tests each name the actor and scenario they serve, and the security review gives every actor an identity and permissions row. Naming the actor and their context — "a picker at shift start on a shared handheld", "the customer's AI agent" — is what makes a design possible to evaluate. PRD requirements carry area-prefixed IDs (`APR-3`) and name their actor. Security controls are `SEC-n`, and become PRD requirements so they're phased. The tech design's traceability table maps every P0/P1 requirement and every `SEC-n` control to where it's implemented and how it's verified. The readiness checklist is checked against those tables before handoff.
 
 ## Prototypes
 

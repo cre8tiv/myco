@@ -15,6 +15,8 @@ You'll be given a package path (`<packages_dir>/<slug>/`), the requirements and 
 3. `architecture.md` if it already exists — you may be updating it. **Re-read it before every edit;** the human may have changed it.
 4. `ux.md` if it exists, for the surfaces your components must serve.
 
+Draw flows from the PRD's actors and key scenarios: each starts from an actor, at the volume and in the context the scenario describes. An AI agent or system actor is a client of your components like any other, with its own entry point and identity.
+
 ## Ground in the real system
 
 Describe the current state from the code and the systems you can see, not from what a system like this usually looks like. Find the components the idea touches, the contracts they already expose, and the patterns the codebase already uses for the same kind of problem. Cite paths and links. A target architecture that ignores how the system is actually built is fiction, and engineering will discover that on day one.

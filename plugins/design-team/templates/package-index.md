@@ -49,7 +49,9 @@ The product lead checks each item before setting status to **Ready for engineeri
 - [ ] Every ADR that constrains implementation is referenced from the tech design.
 - [ ] No document contradicts a D-decision.
 - [ ] Every dependency between delivery slices has a seam in the tech design, with failure and concurrency behavior.
-- [ ] One worked example per phase-1 flow, traced through every document, agrees everywhere it appears.
+- [ ] Every requirement names its actor (or "—" for system-wide), and every actor has at least one key scenario.
+- [ ] Every actor, human or not, has an identity and permissions row in the security review. *(N/A without a security review.)*
+- [ ] Each phase-1 scenario, traced through every document, agrees everywhere it appears: same actor, entity, values, field names, error codes and states.
 - [ ] Every codebase grounded in is recorded with its commit, and every delivery slice names the one repository it changes.
 
 ## Handoff to engineering

@@ -24,7 +24,7 @@ How the relevant part of the system works today, grounded in the code: the compo
 
 ## 3. System context
 
-A Mermaid diagram of the system and the actors and external systems it interacts with. One sentence per external dependency on what crosses the boundary.
+A Mermaid diagram of the system and the actors and external systems it interacts with, labeled with the PRD's actor IDs. One sentence per external dependency on what crosses the boundary.
 
 ## 4. Components
 
@@ -32,7 +32,7 @@ A Mermaid container or component diagram of the target state, then a table with 
 
 ## 5. Key flows
 
-A Mermaid sequence diagram for each flow where ordering, concurrency or failure handling matters. Under each, say what happens when each participant is slow or fails.
+A Mermaid sequence diagram for each flow where ordering, concurrency or failure handling matters, starting from the PRD actor who triggers it and titled with the scenario (`SC-n`) it serves. Under each, say what happens when each participant is slow or fails, and at the volume the scenario describes ("200 pickers at shift start").
 
 ## 6. Data
 
