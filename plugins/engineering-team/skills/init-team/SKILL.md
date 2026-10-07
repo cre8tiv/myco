@@ -63,7 +63,7 @@ When the user corrects a detection, take the correction and don't re-litigate it
 
 ### Knowledge sources
 
-Run the `team-ops:init-knowledge` skill now. It finds every documentation and knowledge source this project can reach — including MCP servers named after the product or an internal system, and connectors that exist but aren't authorized — asks what each is for, and writes the shared `.claude/team/knowledge.md` that every team's agents read. If the file already exists because the other team's setup wrote it, the skill confirms and fills gaps rather than asking again. When it finishes, carry on here.
+Run the `team-ops:init-knowledge` skill now. It finds every documentation and knowledge source this project can reach — including MCP servers named after the product or an internal system, and connectors that exist but aren't authorized — and every codebase the work builds against or imitates beyond this repository, asks what each is for, and writes the shared `.claude/team/knowledge.md` that every team's agents read. If the file already exists because the other team's setup wrote it, the skill confirms and fills gaps rather than asking again. When it finishes, carry on here.
 
 ## 4. Write the profile
 

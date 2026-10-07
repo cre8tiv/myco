@@ -8,7 +8,7 @@ You don't install it directly: `engineering-team` and `design-team` depend on it
 | --------- | ------------ |
 | `agent-coach` agent | Periodic analysis across every team. Writes one dated report of evidence-backed proposals. Propose-only, enforced. |
 | `log-friction` skill | Agents in any team call `team-ops:log-friction` to record process friction they can name. |
-| `init-knowledge` skill | Records the docs and knowledge bases every team should consult in `.claude/team/knowledge.md`. Run by `/init-design` and `/init-team`; run it directly to refresh. |
+| `init-knowledge` skill | Records the docs, knowledge bases and other codebases every team should consult in `.claude/team/knowledge.md`. Run by `/init-design` and `/init-team`; run it directly to refresh. |
 | Hooks | Capture tool failures, permission denials, subagent start/stop, compaction, task lifecycle and session ends — tagged by namespaced agent. |
 
 ## What gets captured
@@ -24,6 +24,8 @@ You don't install it directly: `engineering-team` and `design-team` depend on it
 `.claude/team/knowledge.md` is the one list, shared by every team, of the documentation and knowledge sources agents consult before inferring from the code or from memory: product docs, API references, internal engineering docs, knowledge graphs, runbooks. Each row says how to reach the source (an MCP server, a URL, or a repo path), **what questions it answers**, which roles use it, how authoritative it is, and whether it needs authorizing.
 
 `/init-knowledge` builds it. It looks at every connected MCP server rather than a fixed list of types, so a server named after your product or an internal system gets found, and asks what each unrecognized one is for. It flags connectors that are configured but not authorized: authorization is per person, so each teammate authorizes once through claude.ai **Settings → Connectors** or `/mcp`.
+
+A *Codebases* section lists the repositories the work touches beyond this one, each with a role: *system* (code this work changes, living elsewhere), *contract* (built against, not changed) or *reference* (prior art). Each is identified by its remote URL and ref, with an optional local path relative to the repository root. All of them are read-only to agents. Design packages record the commit each was grounded at.
 
 *Authority* matters most to the design team: a capability documented in an *authoritative* source, such as the product's published docs, is something a design can build on as a supported contract; one found only in an *internal* source isn't.
 

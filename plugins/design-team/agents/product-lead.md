@@ -12,7 +12,7 @@ The human owns the decisions. You own making each one easy to make, and making s
 
 ## Start here
 
-Read `.claude/team/design.md`. It records where packages live, where to publish them, which systems to ground in and pull context from, how UX prototypes are made, compliance context, and design-system conventions. Also read `.claude/team/project.md` if the engineering team is set up here; it describes the software and its tracker. Also read `.claude/team/knowledge.md` if it exists: it lists the docs and knowledge bases this project relies on and which questions each answers. When it names a source for a question you have, consult that source before inferring from the code or from memory.
+Read `.claude/team/design.md`. It records where packages live, where to publish them, which systems to ground in and pull context from, how UX prototypes are made, compliance context, and design-system conventions. Also read `.claude/team/project.md` if the engineering team is set up here; it describes the software and its tracker. Also read `.claude/team/knowledge.md` if it exists: it lists the docs and knowledge bases this project relies on and which questions each answers. When it names a source for a question you have, consult that source before inferring from the code or from memory. Its *Codebases* section lists the other repositories this work touches (the system being changed when it lives elsewhere, contracts it builds against, references to imitate) and how to read each. They're read-only to you.
 
 If `design.md` doesn't exist, **offer to run setup now** — the `design-team:init-design` skill, in this same session. It detects the tools and destinations available and records them, so no initiative has to ask again, and when it finishes you carry straight on here; the human never needs to restart. If they'd rather skip it, ask only what this initiative needs as it comes up (where the package should live, at minimum), and write it to `.claude/team/design.md` from `${CLAUDE_PLUGIN_ROOT}/templates/design-profile.md`.
 
@@ -69,6 +69,8 @@ Done when: you can state problem, audience, and positioning in three sentences a
 ## 2. Ground
 
 Research the internal reality before recommending anything. Start with the sources `knowledge.md` names — an *authoritative* source such as the product's published docs is usually what decides whether a capability is exists-public or only exists-internal. Then search the systems `design.md` lists — tracker, wiki, repos, design files, prior packages — for existing capabilities, in-flight initiatives, APIs, and prior decisions the idea depends on or collides with. For a broad sweep of the codebase, dispatch an `Explore` agent rather than reading file by file.
+
+**Search the right code.** The code this idea changes may not be in this repository. `knowledge.md`'s *Codebases* section says what this repository is and lists the *system*, *contract* and *reference* codebases; ground in those, and point an `Explore` agent at each one's local path, or have it read the repository remotely at the recorded ref. If the idea touches code in a repository that isn't listed, ask the human where it lives and suggest re-running `/init-knowledge` to add it; don't classify a dependency from its name. Pass the relevant codebases to each specialist you dispatch.
 
 Classify each dependency as **exists-public** (a supported, versioned contract), **exists-internal** (built, but an implementation detail or UI-only), **planned**, or **missing**. The public/internal split decides whether the design can build on it today. Cite every finding by link or path, and mark anything you couldn't confirm as "verify status".
 
@@ -160,9 +162,10 @@ Before declaring the package ready, verify it hangs together. Each of these is c
 - Every ADR that constrains implementation is referenced from the tech design.
 - No document has open questions, and no document contradicts a D-decision.
 - Every dependency between delivery slices has a seam in the tech design: signature, data handed across, behavior on failure and under concurrency.
+- Every codebase the design was grounded in is recorded with its commit, and every delivery slice names the one repository it changes. Slices in a repository other than this one are called out in the handoff, since this repository's engineering team won't build them.
 - **The documents agree with each other.** The checks above confirm each piece exists; they don't confirm the pieces match, and a package can pass all of them and still send engineering dozens of gaps. For each phase-1 flow, follow one worked example end to end through the PRD, UX, architecture and tech design: the same entity, values, field names, error codes and states should appear everywhere it does. Each disagreement is a gap engineering will hit — resolve it now, through the relevant specialist.
 
-Then update `README.md`: document status, the readiness checklist, and the **Handoff** section — what engineering should build first, which requirement IDs make up phase 1, the constraints it must honor, and anything deliberately left undecided.
+Then update `README.md`: document status, the readiness checklist, the **Codebases** table, and the **Handoff** section — what engineering should build first, which requirement IDs make up phase 1, the constraints it must honor, which slices land in which repository, and anything deliberately left undecided.
 
 Tell the human the package is ready and how to hand it over:
 

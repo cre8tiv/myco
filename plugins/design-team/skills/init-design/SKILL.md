@@ -1,6 +1,6 @@
 ---
 name: init-design
-description: Set up the design-team agents for this project. Detects where design documents already live, which systems are reachable for grounding and context (tracker, wiki, Figma, Notion, Linear), where packages should be published (repo only, Confluence, Notion, Linear), whether Claude Design is available for prototypes (walking the user through the one-time /design consent if needed), and which design systems and existing design artifacts the ux-designer should work within; asks only what it cannot infer; then writes .claude/team/design.md. Use after installing the design-team plugin, when the product-lead reports the profile is missing, or when destinations, sources or the design system have changed.
+description: Set up the design-team agents for this project. Detects where design documents already live, which systems and codebases are reachable for grounding and context (tracker, wiki, Figma, Notion, Linear, and the repositories the designs will change or build against), where packages should be published (repo only, Confluence, Notion, Linear), whether Claude Design is available for prototypes (walking the user through the one-time /design consent if needed), and which design systems and existing design artifacts the ux-designer should work within; asks only what it cannot infer; then writes .claude/team/design.md. Use after installing the design-team plugin, when the product-lead reports the profile is missing, or when destinations, sources or the design system have changed.
 ---
 
 # init-design
@@ -16,6 +16,7 @@ Run this in the user's main session, not as a subagent: some of what you detect 
 - **Prior profile.** If `.claude/team/design.md` exists, this is a refresh: confirm what's still true, update what isn't, and keep any prose a human has written.
 - **The engineering profile.** If `.claude/team/project.md` exists, reuse its `stream` value and what it says about the product and tracker rather than asking again. Both teams must write telemetry to the same stream.
 - **Existing design documents in the repo.** Look for directories like `docs/`, `docs/design/`, `design/`, `rfcs/`, `adr/`, `specs/`, `prd/`, and files whose names suggest PRDs, specs, RFCs or ADRs. Where the team already keeps design docs is the best default for `packages_dir`; the format of their existing ADRs is the one to keep.
+- **Where the code lives.** Notice whether this repository holds the system the designs will change, or is a docs or design repository, one service of several, or new and empty. Don't settle it here: the knowledge-sources step below asks the user and records the codebases for both teams. Just carry what you noticed into it.
 - **Reachable systems.** Check which MCP tools this session actually has — load deferred tools with `ToolSearch` to see their real names. Look for trackers (Jira, Linear, GitHub, Azure DevOps), wikis (Confluence, Notion), design sources (Figma), document stores (Google Drive, SharePoint), and chat (Slack, Teams). Record the **real tool prefix** you see; a guessed prefix is how an agent ends up silently without a tool.
 - **Claude Design.** It needs Claude Code v2.1.265 or later (`claude --version`), a session signed in to claude.ai, and the `Artifact` tool. If you have the tool, run a quickstart with intent `design`: it tells you whether a Design type is available and which design systems the account offers.
 
@@ -54,7 +55,9 @@ Don't ask about anything the user can't act on, and take a correction without re
 
 ### Knowledge sources
 
-Run the `team-ops:init-knowledge` skill now. It finds every documentation and knowledge source this project can reach — including MCP servers named after the product or an internal system, and connectors that exist but aren't authorized — asks what each is for, and writes the shared `.claude/team/knowledge.md` that every team's agents read. If the file already exists because the other team's setup wrote it, the skill confirms and fills gaps rather than asking again. When it finishes, carry on here.
+Run the `team-ops:init-knowledge` skill now. It finds every documentation and knowledge source this project can reach — including MCP servers named after the product or an internal system, and connectors that exist but aren't authorized — and every codebase the work touches beyond this repository, asks what each is for, and writes the shared `.claude/team/knowledge.md` that every team's agents read. If the file already exists because the other team's setup wrote it, the skill confirms and fills gaps rather than asking again. When it finishes, carry on here.
+
+For the design team, its question **"is the code this work changes in this repository, or somewhere else?"** matters most: if it's elsewhere, that repository is what the architect and tech designer ground in, and the design is worth little if they can't read it. Make sure the answer is recorded and the repository is readable before moving on.
 
 ## 3. Write the profile
 

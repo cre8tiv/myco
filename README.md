@@ -102,7 +102,17 @@ Agents then check the sources the list names before inferring from the code or f
 
 **Connectors you haven't authorized are listed, not silently skipped.** A connector can be configured but unusable until you authorize it. `/init-knowledge` lists each one under *Needs authorization* and asks you to authorize it in claude.ai **Settings → Connectors** or with `/mcp`. Authorization is per person, so each teammate who runs the agents does this once.
 
-Run `/init-knowledge` yourself, from any session, when a new docs source or MCP server becomes available, after you authorize a connector, or to add a source by hand.
+**Other codebases count too.** Agents read the repository they run in and nothing else unless told. If the system your designs change lives in another repository, or the work builds against a shared SDK or service, `/init-knowledge` records it in a *Codebases* section of the same file. It first asks whether the code this work changes is in this repository or somewhere else. It then looks for related repositories: workspaces, submodules, sibling clones, internal packages, repositories your README or `CLAUDE.md` names, and your organization's repositories if `gh` or a hosting MCP server is available. Each one gets a role:
+
+- **system**: code this work changes, living in another repository. The design team grounds its designs there.
+- **contract**: built against but not changed.
+- **reference**: prior art to imitate.
+
+Each is recorded by its remote URL and ref, with an optional local path relative to this repository's root. If a local clone sits outside the project, it needs adding to `additionalDirectories` before agents can read it; setup offers to do that per person.
+
+Every codebase is read-only to the agents. Design packages record the commit each one was grounded at, and which repository each delivery slice changes. The engineering tech lead builds only the slices that land in its own repository and hands the rest over, because building across repositories isn't supported yet.
+
+Run `/init-knowledge` yourself, from any session, when a new docs source, MCP server or related repository becomes available, after you authorize a connector, or to add a source by hand.
 
 ### Running headless
 
@@ -176,7 +186,7 @@ Everything your project owns, all written by the setup skills:
 | Path | Committed? | Why |
 | ---- | ---------- | --- |
 | `.claude/team/project.md`, `design.md` | Yes | Each team's profile |
-| `.claude/team/knowledge.md` | Yes | Docs and knowledge sources every team consults, and what each answers |
+| `.claude/team/knowledge.md` | Yes | Docs, knowledge sources and other codebases every team consults, and what each answers |
 | `.claude/qa/plans`, `scripts`, `fixtures` | Yes | Project assets; merge with the change they cover |
 | `.claude/qa/runs/**` captures | No | Heavy; referenced by path from run reports |
 | `.claude/ops/reports/*.md` | Yes | The durable artifact; history enables attribution |
@@ -230,6 +240,8 @@ If that last path doesn't exist but a directory named after your project folder 
 **An agent says the project profile is missing.** Run `/init-team` or `/init-design` for that team, or start the team's lead and accept its offer to set up. The agents refuse to guess at a tracker workflow or a test command, by design.
 
 **An agent guessed at something your docs answer.** The source is missing from `.claude/team/knowledge.md`, its *Answers* column doesn't say when to use it, or it's listed under *Needs authorization*. Run `/init-knowledge` to add or re-describe it — `agent-coach` also proposes this when it sees repeated "couldn't find it" friction.
+
+**A design described code engineering didn't find.** The design was probably grounded in the wrong repository, or the right one wasn't readable. Check the *Codebases* section of `.claude/team/knowledge.md`: the repository that holds the system should be listed as *system*, and readable locally (in `additionalDirectories`) or remotely through `gh`. The package's *Codebases* table shows which commit each codebase was grounded at.
 
 **A docs connector shows up only as `authenticate` tools.** It's configured but not authorized for you. Authorize it in claude.ai **Settings → Connectors** or with `/mcp`, then re-run `/init-knowledge` to verify it and move it out of *Needs authorization*. A teammate authorizing it doesn't cover you.
 

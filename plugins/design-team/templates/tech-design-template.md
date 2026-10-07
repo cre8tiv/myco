@@ -21,6 +21,8 @@ What gets built, in one paragraph, and which PRD phases this document covers.
 
 The existing patterns this design reuses — how the codebase defines an endpoint, a table, a migration, a job, a flag, a test — with paths. Any new pattern, with the reason it's needed.
 
+**Codebases read:** the codebases this design draws on, with the commit each was read at, when they differ from the architecture's *Grounded against* table — or "As architecture.md".
+
 ## 3. Component changes
 
 Per component from the architecture: what changes, what's new, what's removed. Reference ADRs by number.
@@ -59,7 +61,7 @@ Table with columns `Requirement | Implemented in | Verified by`. One row for eve
 
 ## 12. Delivery slices
 
-Suggested independently shippable increments, aligned to PRD phases: table with columns `Slice | Scope (requirement IDs) | Depends on | Notes`. These are guidance for the tech lead's decomposition, not tickets.
+Suggested independently shippable increments, aligned to PRD phases: table with columns `Slice | Repository | Scope (requirement IDs) | Depends on | Notes`. *Repository* is "this repo" or a codebase name from `knowledge.md`; a slice changes one repository. These are guidance for the tech lead's decomposition, not tickets.
 
 Then one row per dependency between slices: table with columns `Seam | Producer slice | Consumer slice | Contract (signature and data) | On failure | Under concurrency`. Every "Depends on" entry above needs a seam here; an IC building one side should be able to stub the other from this row alone.
 

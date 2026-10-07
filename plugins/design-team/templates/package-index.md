@@ -33,6 +33,10 @@ Table with columns `Document | Author | Status | Open questions`. List only the 
 
 **Published copies:** one line per destination — where, link, date, and the version published.
 
+## Codebases
+
+The code this package was designed against, so engineering knows where the work lands and how far the code has moved since. Table with columns `Codebase | Role | Commit grounded at | Slices that change it`. One row per codebase from the architecture's *Grounded against* table — this repository included when it holds the code. *Role* is *this repo*, *system*, *contract* or *reference*, as in `.claude/team/knowledge.md`.
+
 ## Readiness
 
 The product lead checks each item before setting status to **Ready for engineering**. Each is verifiable against the documents; tick it only after checking.
@@ -46,6 +50,7 @@ The product lead checks each item before setting status to **Ready for engineeri
 - [ ] No document contradicts a D-decision.
 - [ ] Every dependency between delivery slices has a seam in the tech design, with failure and concurrency behavior.
 - [ ] One worked example per phase-1 flow, traced through every document, agrees everywhere it appears.
+- [ ] Every codebase grounded in is recorded with its commit, and every delivery slice names the one repository it changes.
 
 ## Handoff to engineering
 
@@ -53,6 +58,7 @@ Written for the engineering tech lead. It will turn this into tickets; don't pre
 
 - **Build first:** the phase and requirement IDs that make up the first deliverable, and why they come first.
 - **Suggested slices:** a pointer to the tech design's delivery slices.
+- **Work in other repositories:** slices that change a repository other than this one, and who builds them. The tech lead in this repository builds only what lands here; the rest is handed over with the same package. Write "None" if everything lands here.
 - **Constraints to honor:** the ADRs and `SEC-n` controls that are non-negotiable, by ID.
 - **Acceptance comes from:** PRD requirements for behavior, UX state tables for what QA exercises, `SEC-n` "verified by" for security checks.
 - **Deliberately undecided:** anything the package intentionally leaves to engineering, so it isn't mistaken for an oversight.

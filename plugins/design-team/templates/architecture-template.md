@@ -18,7 +18,9 @@ What this architecture is for, in two or three sentences, and the PRD decisions 
 
 ## 2. Current state
 
-How the relevant part of the system works today, grounded in the code: the components involved, their responsibilities, and the contracts they expose. Cite paths. Mark anything you couldn't confirm.
+How the relevant part of the system works today, grounded in the code: the components involved, their responsibilities, and the contracts they expose. Cite paths, prefixed with the codebase name when it isn't this repository. Mark anything you couldn't confirm.
+
+**Grounded against:** table with columns `Codebase | Role | Ref | Commit | Read on`, one row per codebase read for this section — this repository included when it holds the code. Engineering compares the commits with the code it builds on; a large gap means the current state may have moved.
 
 ## 3. System context
 
