@@ -19,11 +19,12 @@ Note what this means for *where* a fix goes. Agent definitions live in installed
 - **`~/.claude/ops/<stream>/friction.jsonl`** — agents' own reports of friction they hit. Weight these heavily: an agent is the only witness to its own instructions being ambiguous.
 - **`~/.claude/ops/<stream>/usage.jsonl`** — token usage per session, agent and unit of work. Read it through the `team-ops:cost-report` skill (`--since <window start> --json`, and `--by agent`) rather than directly: it applies prices and keeps only the latest snapshot of each session. Cost turns a finding into a priority — a friction pattern in the most expensive agent, or rework that doubled a ticket's cost, is worth more than the same pattern in a cheap one.
 - **`~/.claude/projects/*/*.jsonl`** — main-session transcripts. Full detail for the top-level session.
+- **`~/.claude/projects/*/<session>/subagents/agent-*.jsonl`** — one transcript per subagent, with a `.meta.json` beside it naming the agent type and task description. Full detail of what happened inside an IC or specialist: every tool call, error and retry.
 - **Each team's outcome records** — see *Outcome signals by team* below.
 - **`.claude/team/*.md`** — what this project told each team about itself, including `knowledge.md`, the shared list of docs and knowledge bases. Often the real culprit: a stale command or a missing environment note shows up as a dozen tool failures.
 - **`git log`** on the project's `.claude/` and on prior reports — what changed, when. Essential for attributing an improvement (or a regression) to a change.
 
-**Know your blind spot.** Subagent work is *not* written to session transcripts — there are no sidechain records on disk. Everything you know about what happens inside an IC comes from the hook stream and the agent's own self-reports. So absence of evidence about an IC's process is not evidence that it ran clean. Say so when it matters, rather than reporting a quiet week as a good one.
+**Know your blind spot.** Claude Code cleans up old transcripts, so for older work in the window you may have only the hook stream, self-reports and usage log. Absence of evidence about an agent's process is not evidence that it ran clean. Say so when it matters, rather than reporting a quiet week as a good one.
 
 ## Method
 
