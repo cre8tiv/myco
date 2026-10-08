@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: agent-teams
+    folder: Claude Code
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

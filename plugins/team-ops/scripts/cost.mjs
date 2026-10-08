@@ -2,7 +2,7 @@
 // Cost report over the stream's usage log.
 //
 //   node cost.mjs [--work <prefix>] [--since <YYYY-MM-DD>] [--by work|agent|model|day|session]
-//                 [--json] [--no-backfill]
+//                 [--json] [--no-backfill] [--export]
 //
 // --work matches a work tag by prefix, so "order-exceptions" covers every round and
 // phase of that package, and a ticket key covers that ticket. Before reporting, it
@@ -13,6 +13,7 @@ import { join, dirname } from 'node:path';
 import { existsSync, statSync, readdirSync } from 'node:fs';
 import { streamDir, resolveStreamName } from './stream.mjs';
 import { snapshotSession, appendUsage, currentUsage, costOf, pricesAsOf, findTranscript, readJsonl } from './usage-lib.mjs';
+import { exportSessions } from './otlp.mjs';
 
 /** @param {string[]} argv @returns {Record<string, string|boolean>} */
 function parseArgs(argv) {
@@ -33,7 +34,7 @@ function parseArgs(argv) {
  * were never snapshotted: a headless run killed before SessionEnd, a session still
  * open. Sessions are the ones the team event stream or the usage log knows about.
  * @param {string} dir stream directory
- * @returns {number} sessions updated
+ * @returns {string[]} sessions updated
  */
 function backfill(dir) {
   const events = join(dir, 'events.jsonl');
@@ -43,7 +44,8 @@ function backfill(dir) {
   for (const r of usage) if (!lastSnap.has(r.session) || r.snap > /** @type {string} */ (lastSnap.get(r.session))) lastSnap.set(r.session, r.snap);
   const sessions = new Set([...lastSnap.keys(), ...(existsSync(events) ? readJsonl(events).map((r) => r.session).filter(Boolean) : [])]);
   const projects = join(homedir(), '.claude', 'projects');
-  let n = 0;
+  /** @type {string[]} */
+  const updated = [];
   for (const s of sessions) {
     const t = findTranscript(projects, s);
     if (!t) continue;
@@ -53,9 +55,9 @@ function backfill(dir) {
     const setting = readJsonl(t).find((r) => r.type === 'agent-setting');
     const recs = snapshotSession({ transcriptPath: t, sessionId: s, leadAgent: setting?.agentSetting });
     appendUsage(dir, recs);
-    if (recs.length) n++;
+    if (recs.length) updated.push(s);
   }
-  return n;
+  return updated;
 }
 
 /** @param {string} transcript @param {string} sessionId @returns {number} newest mtime of the session's transcripts */
@@ -71,7 +73,17 @@ const mtok = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.
 
 const opts = parseArgs(process.argv.slice(2));
 const dir = streamDir(process.cwd());
-const filled = opts['no-backfill'] ? 0 : backfill(dir);
+const stream = resolveStreamName(process.cwd());
+const updated = opts['no-backfill'] ? [] : backfill(dir);
+const filled = updated.length;
+// Backfilled sessions are exported like hook snapshots; --export sends every session,
+// to seed a newly configured backend with the history.
+const toExport = opts.export ? new Set(currentUsage(dir).map((r) => r.session)) : updated;
+const exportResult = await exportSessions(dir, stream, toExport);
+if (opts.export && !exportResult) {
+  console.error('Export is off: set TEAM_OPS_OTLP_ENDPOINT. See the telemetry guide in the team-ops plugin.');
+  process.exit(1);
+}
 const by = String(opts.by || 'work');
 const prefix = typeof opts.work === 'string' ? opts.work : '';
 const since = typeof opts.since === 'string' ? opts.since : '';
@@ -110,7 +122,7 @@ const total = list.reduce((s, g) => s + g.cost, 0);
 
 if (opts.json) {
   console.log(JSON.stringify({
-    stream: resolveStreamName(process.cwd()), by, work: prefix || null, since: since || null, prices_as_of: pricesAsOf(), backfilled_sessions: filled,
+    stream, by, work: prefix || null, since: since || null, prices_as_of: pricesAsOf(), backfilled_sessions: filled, export: exportResult,
     total_usd: Number(total.toFixed(4)),
     groups: list.map((g) => ({ key: g.key, usd: Number(g.cost.toFixed(4)), unpriced_models: g.unpriced, sessions: g.sessions.size, output_tokens: g.output, input_tokens: g.input_total, first: g.first, last: g.last,
       by_agent: Object.fromEntries([...g.agents].sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, Number(v.toFixed(4))])) })),
@@ -118,7 +130,7 @@ if (opts.json) {
 } else {
   const title = prefix ? `Cost of ${prefix}` : 'Cost';
   console.log(`# ${title}, by ${by}\n`);
-  console.log(`Stream \`${resolveStreamName(process.cwd())}\`${since ? `, since ${since}` : ''}. API-equivalent estimate at list prices as of ${pricesAsOf()}; a subscription bills differently.${filled ? ` Backfilled ${filled} session(s) from transcripts.` : ''}\n`);
+  console.log(`Stream \`${stream}\`${since ? `, since ${since}` : ''}. API-equivalent estimate at list prices as of ${pricesAsOf()}; a subscription bills differently.${filled ? ` Backfilled ${filled} session(s) from transcripts.` : ''}${exportResult?.error ? ` OTLP export failed: ${exportResult.error}.` : exportResult?.exported ? ` Exported ${exportResult.exported} session(s) to OTLP.` : ''}\n`);
   if (!list.length) {
     console.log('No usage recorded yet. Usage is captured when a team lead session ends and when each team agent finishes.');
   } else {
@@ -131,3 +143,7 @@ if (opts.json) {
     console.log(`| **Total** | **${usd(total)}** | | | | |`);
   }
 }
+
+// An unreachable OTLP endpoint can hold a socket open past the export timeout, so
+// exit once the output is flushed.
+process.stdout.write('', () => process.exit(0));

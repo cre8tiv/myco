@@ -43,6 +43,8 @@ A *Codebases* section lists the repositories the work touches beyond this one, e
 
 **How accurate.** Input and cache token counts match Claude Code's own accounting exactly; output tokens per response run somewhat lower than its session totals, so estimates tend to be a few percent to ~10% low. They're API list prices — a Team or Max subscription bills differently.
 
+**Across a team.** Set `TEAM_OPS_OTLP_ENDPOINT` and the same records are exported as OpenTelemetry metrics, next to Claude Code's own cost metrics, to any backend that takes OTLP. [`telemetry/README.md`](telemetry/README.md) covers turning both on, choosing a backend when you have none, and an example Docker stack with a Grafana dashboard.
+
 ## Running the coach
 
 Invoke `agent-coach` periodically — weekly, or after a batch of work — not per task. Its findings need three or more occurrences to count, so a report covering a couple of tasks is noise.
@@ -80,6 +82,7 @@ scripts/
   usage.mjs                 token usage snapshot, on SubagentStop and SessionEnd
   usage-lib.mjs             transcript parsing, attribution, pricing
   cost.mjs                  the cost report, called by cost-report
+  otlp.mjs                  OpenTelemetry export of cost per unit of work
   prices.json               API list prices per model
   coach-guard.mjs           propose-only enforcement
   stream.mjs, profile.mjs   stream resolution from the team profiles
@@ -87,4 +90,7 @@ templates/
   report-template.md        the report's fixed format
   knowledge.md              becomes .claude/team/knowledge.md
   TRENDS.md                 seeded into .claude/ops/reports/ on first run
+telemetry/
+  README.md                 team cost telemetry: setup and backends
+  stack/                    example collector + Prometheus + Grafana, with dashboard
 ```

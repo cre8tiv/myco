@@ -5,11 +5,13 @@
 // Wired to SubagentStop (that subagent, if it's a team agent) and SessionEnd (the
 // lead's own usage, if this is a team lead session, plus every subagent). Snapshots
 // are cumulative; the report reads only the latest per session and agent, so a
-// resumed session or a repeated hook just supersedes the earlier one.
+// resumed session or a repeated hook just supersedes the earlier one. When
+// TEAM_OPS_OTLP_ENDPOINT is set, the session's usage is also exported (otlp.mjs).
 import { join, dirname } from 'node:path';
 import { existsSync } from 'node:fs';
-import { streamDir } from './stream.mjs';
+import { streamDir, resolveStreamName } from './stream.mjs';
 import { snapshotSession, appendUsage } from './usage-lib.mjs';
+import { exportSessions } from './otlp.mjs';
 
 const read = () =>
   new Promise((res) => {
@@ -32,7 +34,10 @@ try {
     } else if (e.hook_event_name === 'SessionEnd') {
       records = snapshotSession({ transcriptPath, sessionId: e.session_id, leadAgent: e.agent_type });
     }
-    appendUsage(streamDir(e.cwd), records);
+    const dir = streamDir(e.cwd);
+    appendUsage(dir, records);
+    // The session's whole current usage, so the export stays cumulative per session.
+    if (records.length) await exportSessions(dir, resolveStreamName(e.cwd), [e.session_id]);
   }
 } catch {
   // Cost accounting is never worth breaking a run over.

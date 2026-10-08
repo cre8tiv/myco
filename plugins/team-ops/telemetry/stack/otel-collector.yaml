@@ -1,0 +1,33 @@
+# Receives OTLP from Claude Code and team-ops and serves it to Prometheus.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+  batch: {}
+
+exporters:
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    # Claude Code exports deltas by default; the exporter accumulates them into
+    # per-session totals. Keep a session's total long enough to survive a lunch break.
+    metric_expiration: 24h
+    # Resource attributes (OTEL_RESOURCE_ATTRIBUTES, TEAM_OPS_OTLP_RESOURCE_ATTRIBUTES)
+    # become labels, so dashboards can filter by team.
+    resource_to_telemetry_conversion:
+      enabled: true
+    translation_strategy: UnderscoreEscapingWithSuffixes
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus]
