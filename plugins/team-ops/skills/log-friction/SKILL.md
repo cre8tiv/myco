@@ -8,8 +8,10 @@ description: Record process friction an agent hit — its own instructions were 
 Run this once per incident, then carry on with your work:
 
 ```sh
-node "${CLAUDE_PLUGIN_ROOT}/scripts/friction.mjs" --agent <your agent name> --kind <kind> --note "<what cost you time, one sentence>" --ticket <ticket key or design package slug, if there is one>
+node "${CLAUDE_PLUGIN_ROOT}/scripts/friction.mjs" --agent <your agent name> --kind <kind> --note "<what cost you time, one sentence>"
 ```
+
+The report is tied to your session and the unit of work you're on automatically. Add `--work <ticket key or design package slug>` only when it's about different work — a design problem found while building, say, which belongs to the package it came from.
 
 `<kind>` is one of:
 

@@ -1,6 +1,6 @@
 {
-  "uid": "agent-teams-cost",
-  "title": "Agent teams: cost",
+  "uid": "agent-teams",
+  "title": "Agent teams",
   "tags": [
     "claude-code",
     "team-ops"
@@ -13,14 +13,21 @@
     "from": "now-30d",
     "to": "now"
   },
-  "description": "Claude Code cost per person and model, and agent-team cost per unit of work and agent (team-ops). API-equivalent estimates at list prices.",
+  "description": "Claude Code cost per person and model; agent-team cost, friction and tool failures per unit of work and agent (team-ops). Costs are API-equivalent estimates at list prices.",
   "templating": {
     "list": [
       {
         "name": "datasource",
-        "label": "Data source",
+        "label": "Metrics",
         "type": "datasource",
         "query": "prometheus",
+        "current": {}
+      },
+      {
+        "name": "logs",
+        "label": "Events",
+        "type": "datasource",
+        "query": "loki",
         "current": {}
       },
       {
@@ -609,6 +616,318 @@
         "overrides": []
       },
       "interval": "1m"
+    },
+    {
+      "id": 10,
+      "type": "row",
+      "title": "Events",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 30,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 11,
+      "title": "Friction by kind",
+      "type": "bargauge",
+      "gridPos": {
+        "x": 0,
+        "y": 31,
+        "w": 8,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "${logs}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${logs}"
+          },
+          "expr": "sort_desc(sum by (friction_kind) (count_over_time({service_name=\"team-ops\"} | event_name=~\"team_ops.friction\" | team_ops_stream=~\"$stream\" [$__range])))",
+          "legendFormat": "{{friction_kind}}",
+          "queryType": "range"
+        }
+      ],
+      "maxDataPoints": 1,
+      "description": "Process friction agents reported with team-ops:log-friction, by kind. handoff includes design problems sent back from engineering.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "displayName": "${__field.labels.friction_kind}",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "basic",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "valueMode": "text",
+        "namePlacement": "left",
+        "sizing": "manual",
+        "minVizHeight": 16,
+        "maxVizHeight": 24,
+        "text": {
+          "titleSize": 13,
+          "valueSize": 13
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Friction by agent",
+      "type": "bargauge",
+      "gridPos": {
+        "x": 8,
+        "y": 31,
+        "w": 8,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "${logs}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${logs}"
+          },
+          "expr": "sort_desc(sum by (agent) (count_over_time({service_name=\"team-ops\"} | event_name=~\"team_ops.friction\" | team_ops_stream=~\"$stream\" [$__range])))",
+          "legendFormat": "{{agent}}",
+          "queryType": "range"
+        }
+      ],
+      "maxDataPoints": 1,
+      "description": "Who reported the friction.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "displayName": "${__field.labels.agent}",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "basic",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "valueMode": "text",
+        "namePlacement": "left",
+        "sizing": "manual",
+        "minVizHeight": 16,
+        "maxVizHeight": 24,
+        "text": {
+          "titleSize": 13,
+          "valueSize": 13
+        }
+      }
+    },
+    {
+      "id": 13,
+      "title": "Tool failures by agent",
+      "type": "bargauge",
+      "gridPos": {
+        "x": 16,
+        "y": 31,
+        "w": 8,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "${logs}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${logs}"
+          },
+          "expr": "sort_desc(sum by (agent) (count_over_time({service_name=\"team-ops\"} | event_name=~\"team_ops.tool_failure\" | team_ops_stream=~\"$stream\" [$__range])))",
+          "legendFormat": "{{agent}}",
+          "queryType": "range"
+        }
+      ],
+      "maxDataPoints": 1,
+      "description": "Failed tool calls by team agents.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "displayName": "${__field.labels.agent}",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "basic",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "valueMode": "text",
+        "namePlacement": "left",
+        "sizing": "manual",
+        "minVizHeight": 16,
+        "maxVizHeight": 24,
+        "text": {
+          "titleSize": 13,
+          "valueSize": 13
+        }
+      }
+    },
+    {
+      "id": 14,
+      "title": "Problems per unit of work",
+      "type": "table",
+      "gridPos": {
+        "x": 0,
+        "y": 39,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "${logs}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${logs}"
+          },
+          "expr": "sum by (work, event_name) (count_over_time({service_name=\"team-ops\"} | event_name=~\"team_ops.(tool_failure|permission_denied|friction|stop_failure)\" | team_ops_stream=~\"$stream\" [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Tool failures, permission denials, friction and failed stops per unit of work. Read it next to Cost by unit of work.",
+      "transformations": [
+        {
+          "id": "groupingToMatrix",
+          "options": {
+            "columnField": "event_name",
+            "rowField": "work",
+            "valueField": "Value #A",
+            "emptyValue": "zero"
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "team_ops.(.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 15,
+      "title": "Friction reports",
+      "type": "logs",
+      "gridPos": {
+        "x": 0,
+        "y": 47,
+        "w": 24,
+        "h": 10
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "${logs}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${logs}"
+          },
+          "expr": "{service_name=\"team-ops\"} | event_name=~\"team_ops.friction\" | team_ops_stream=~\"$stream\"",
+          "legendFormat": "",
+          "queryType": "range"
+        }
+      ],
+      "description": "Each report with its agent, kind and work. The text shows only when TEAM_OPS_OTLP_LOG_CONTENT=1.",
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      }
     }
   ]
 }

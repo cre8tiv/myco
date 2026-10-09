@@ -1,5 +1,5 @@
-# Example stack: OpenTelemetry Collector -> Prometheus -> Grafana, for Claude Code's own
-# metrics and team-ops' cost per unit of work. A starting point to run and secure
+# Example stack: OpenTelemetry Collector -> Prometheus (metrics) and Loki (events) ->
+# Grafana, for Claude Code's own telemetry and team-ops' cost and events per unit of work. A starting point to run and secure
 # yourself, not a supported service. Every port is bound to this machine only.
 #
 #   docker compose up -d
@@ -12,6 +12,7 @@ services:
     command: ["--config=/etc/otelcol/config.yaml"]
     volumes:
       - ./otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    depends_on: [loki]
     ports:
       - "127.0.0.1:4317:4317"
       - "127.0.0.1:4318:4318"
@@ -30,20 +31,31 @@ services:
       - "127.0.0.1:9090:9090"
     restart: unless-stopped
 
+  loki:
+    image: grafana/loki:3.7.8
+    command: ["-config.file=/etc/loki/config.yaml"]
+    volumes:
+      - ./loki.yaml:/etc/loki/config.yaml:ro
+      - loki-data:/loki
+    ports:
+      - "127.0.0.1:3100:3100"
+    restart: unless-stopped
+
   grafana:
     image: grafana/grafana:13.0.10
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
-      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/agent-teams-cost.json
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/agent-teams.json
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
     ports:
       - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
-    depends_on: [prometheus]
+    depends_on: [prometheus, loki]
     restart: unless-stopped
 
 volumes:
   prometheus-data:
+  loki-data:
   grafana-data:

@@ -122,7 +122,7 @@ When a specialist returns, **don't forward its output to the human raw.** Read t
 
 - Put its open questions into your decision loop — merged with yours, de-duplicated, each phrased as a decision with the specialist's recommendation attached.
 - Apply its proposed PRD changes yourself, or put them to the human as questions if they change scope or priority. Required security controls become requirements in the PRD's `SEC` area, so they get phased like everything else.
-- Check it against the other documents. If it contradicts a decision already made, send it back with the decision number rather than re-opening the decision — and log that with the `team-ops:log-friction` skill, kind `handoff`, with the package slug as the ticket.
+- Check it against the other documents. If it contradicts a decision already made, send it back with the decision number rather than re-opening the decision — and log that with the `team-ops:log-friction` skill, kind `handoff`, with `--work <package slug>`.
 
 **Don't end your turn while specialists are running.** Wait for every specialist you dispatched to report back first. In a headless run (`claude -p`), ending the turn with work in flight lets the CLI stop waiting and kill it.
 

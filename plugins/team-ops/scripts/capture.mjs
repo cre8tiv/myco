@@ -8,9 +8,14 @@
 // Successful tool calls are deliberately not captured: that would spawn a process
 // per tool call across every agent for a marginal signal. Add PostToolUse to
 // hooks.json temporarily if you want a full tool census for a stretch.
+//
+// Each record carries the fields every team-ops record shares (context.mjs) and, when
+// TEAM_OPS_OTLP_ENDPOINT is set, is also exported as an OTel event (otlp.mjs).
 import { appendFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { streamDir } from './stream.mjs';
+import { streamDir, resolveStreamName } from './stream.mjs';
+import { subagentType, resolveContext } from './context.mjs';
+import { exportEvent } from './otlp.mjs';
 
 const cap = (v, n) => (typeof v === 'string' && v.length > n ? v.slice(0, n) + '…' : v);
 
@@ -31,16 +36,21 @@ try {
   // session in the project — an orchestrating session, an ad-hoc one. Their events
   // aren't team activity and would skew the coach's numbers. Team agents are
   // plugin agents, and plugin agents are namespaced ("engineering-team:ic-generalist").
-  if (!String(e.agent_type || '').includes(':')) process.exit(0);
+  // A subagent's own metadata names it reliably; the hook's agent_type doesn't always.
+  const agentType = subagentType(e.transcript_path, e.session_id, e.agent_id) || e.agent_type;
+  if (!String(agentType || '').includes(':')) process.exit(0);
+  const ctx = resolveContext({ transcriptPath: e.transcript_path, sessionId: e.session_id, agentId: e.agent_id, agentType });
 
   const ti = e.tool_input || {};
 
   const rec = {
     ts: new Date().toISOString(),
     event: e.hook_event_name,
-    agent: e.agent_type,
+    agent: ctx.agent,
     agent_id: e.agent_id,
     session: e.session_id,
+    work: ctx.work,
+    parent_work: ctx.parent_work,
     cwd: e.cwd,
     mode: e.permission_mode,
     effort: e.effort?.level,
@@ -55,7 +65,9 @@ try {
   };
   for (const k of Object.keys(rec)) if (rec[k] === undefined || rec[k] === null) delete rec[k];
 
-  appendFileSync(join(streamDir(e.cwd), 'events.jsonl'), JSON.stringify(rec) + '\n', 'utf8');
+  const dir = streamDir(e.cwd);
+  appendFileSync(join(dir, 'events.jsonl'), JSON.stringify(rec) + '\n', 'utf8');
+  await exportEvent(dir, resolveStreamName(e.cwd), rec, 'event');
 } catch {
   // Telemetry is never worth breaking a run over.
 }

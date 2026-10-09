@@ -1,19 +1,25 @@
-// Exports cost and tokens per unit of work as OpenTelemetry metrics, over OTLP/HTTP
-// with a JSON body. Off unless TEAM_OPS_OTLP_ENDPOINT is set.
+// Exports team-ops telemetry as OpenTelemetry, over OTLP/HTTP with a JSON body. Off
+// unless TEAM_OPS_OTLP_ENDPOINT is set.
 //
-// Claude Code's own metrics already carry cost per user, model and agent; what they
-// can't carry is the unit of work. These add it. They're separate metric names, so a
+//   Metrics  team_ops.work.cost, team_ops.work.token.usage — cost per unit of work
+//   Events   team_ops.<event> log records — hook events and friction reports
+//
+// Every metric point and event carries the same fields (FIELDS below), so a backend
+// can join friction or tool failures to the cost of the same work. Claude Code's own
+// metrics can't carry the unit of work; these add it, under separate names, so a
 // dashboard never adds the two together.
 //
 // Claude Code doesn't pass OTEL_* variables to hooks, so this reads its own:
-//   TEAM_OPS_OTLP_ENDPOINT             base URL (http://localhost:4318) or the full /v1/metrics URL
+//   TEAM_OPS_OTLP_ENDPOINT             base URL (http://localhost:4318); a /v1/metrics or /v1/logs URL works too
 //   TEAM_OPS_OTLP_HEADERS              "key=value,key2=value2", e.g. an Authorization header
 //   TEAM_OPS_OTLP_RESOURCE_ATTRIBUTES  "key=value,..." added to every export, e.g. team.id=platform
+//   TEAM_OPS_OTLP_LOG_CONTENT          "1" to include free text in events: friction notes, agent
+//                                      reports, error messages, commands. Off by default.
 //
-// Values are cumulative per session, so a resend is harmless and a failed export is
-// made good by the session's next one: every export sends the session's whole
-// current usage, not what changed.
-import { writeFileSync } from 'node:fs';
+// Metric values are cumulative per session, so a resend is harmless and a failed
+// export is made good by the session's next one. Events are sent once, best effort;
+// the local JSONL files stay the complete record.
+import { writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { currentUsage, costOf } from './usage-lib.mjs';
 
@@ -40,41 +46,52 @@ function decode(s) {
   try { return decodeURIComponent(s); } catch { return s; }
 }
 
-/** @returns {string | null} the metrics URL, or null when export is off */
-export function metricsUrl() {
-  const e = String(process.env.TEAM_OPS_OTLP_ENDPOINT || '').trim().replace(/\/+$/, '');
-  if (!e) return null;
-  return e.endsWith('/v1/metrics') ? e : `${e}/v1/metrics`;
+/** @param {'metrics' | 'logs'} signal @returns {string | null} the signal's URL, or null when export is off */
+export function signalUrl(signal) {
+  const e = String(process.env.TEAM_OPS_OTLP_ENDPOINT || '').trim().replace(/\/+$/, '').replace(/\/v1\/(metrics|logs)$/, '');
+  return e ? `${e}/v1/${signal}` : null;
 }
 
-/** @param {Record<string, string>} o */
-const attrs = (o) => Object.entries(o).filter(([, v]) => v !== null && v !== undefined && v !== '').map(([key, v]) => ({ key, value: { stringValue: String(v) } }));
+/** @returns {boolean} whether events may carry free text */
+export const logContent = () => process.env.TEAM_OPS_OTLP_LOG_CONTENT === '1';
+
+/** @param {Record<string, any>} o */
+const attrs = (o) => Object.entries(o).filter(([, v]) => v !== null && v !== undefined && v !== '').map(([key, v]) => ({ key, value: typeof v === 'number' ? { intValue: String(v) } : { stringValue: String(v) } }));
 
 /** @param {string} iso @returns {string} nanoseconds since the epoch */
 const nanos = (iso) => `${BigInt(Date.parse(iso)) * 1000000n}`;
 
 /**
- * Builds the OTLP request for one session's current usage, aggregated per agent type,
- * unit of work, model and speed.
+ * The shared fields, as OTel attributes. Session is a resource attribute.
+ * @param {{stream: string, agent?: string, agent_id?: string, work?: string | null, parent_work?: string | null}} r
+ */
+const FIELDS = (r) => ({ 'team_ops.stream': r.stream, agent: r.agent, 'agent.id': r.agent_id, work: r.work || '(untagged)', parent_work: r.parent_work || '' });
+
+/** @param {string} session */
+const resource = (session) => ({ attributes: attrs({ 'service.name': 'team-ops', 'service.instance.id': session, 'session.id': session, ...parsePairs(process.env.TEAM_OPS_OTLP_RESOURCE_ATTRIBUTES) }) });
+
+/**
+ * Builds the OTLP metrics request for one session's current usage, aggregated per
+ * agent type, unit of work, model and speed.
  * @param {any[]} rows the session's current usage records
  * @param {{session: string, stream: string}} ctx
  * @returns {object | null}
  */
-export function buildRequest(rows, { session, stream }) {
+export function buildMetrics(rows, { session, stream }) {
   if (!rows.length) return null;
   /** @type {Map<string, any>} */
   const groups = new Map();
   for (const r of rows) {
     const k = [r.agent, r.work, r.parent_work, r.model, r.speed].join('|');
-    if (!groups.has(k)) groups.set(k, { agent: r.agent, work: r.work, parent_work: r.parent_work, model: r.model, speed: r.speed, cost: 0, tokens: {}, first: r.first });
+    if (!groups.has(k)) groups.set(k, { agent: r.agent, work: r.work, parent_work: r.parent_work, model: r.model, speed: r.speed, cost: 0, tokens: {} });
     const g = groups.get(k);
     g.cost += costOf(r) || 0;
     for (const [type, keys] of TOKEN_TYPES) g.tokens[type] = (g.tokens[type] || 0) + keys.reduce((s, key) => s + (r[key] || 0), 0);
-    if (r.first < g.first) g.first = r.first;
   }
   const start = nanos(rows.reduce((a, r) => (r.first < a ? r.first : a), rows[0].first));
   const now = `${BigInt(Date.now()) * 1000000n}`;
-  const base = (g) => ({ 'team_ops.stream': stream, agent: g.agent, work: g.work || '(untagged)', parent_work: g.parent_work || '', model: g.model, speed: g.speed });
+  // Metric points aggregate across instances of an agent type, so no agent.id.
+  const base = (g) => ({ ...FIELDS({ stream, agent: g.agent, work: g.work, parent_work: g.parent_work }), model: g.model, speed: g.speed });
   const cost = [];
   const tokens = [];
   for (const g of groups.values()) {
@@ -86,7 +103,7 @@ export function buildRequest(rows, { session, stream }) {
   const sum = (points) => ({ dataPoints: points, aggregationTemporality: 2, isMonotonic: true });
   return {
     resourceMetrics: [{
-      resource: { attributes: attrs({ 'service.name': 'team-ops', 'service.instance.id': session, 'session.id': session, ...parsePairs(process.env.TEAM_OPS_OTLP_RESOURCE_ATTRIBUTES) }) },
+      resource: resource(session),
       scopeMetrics: [{
         scope: { name: 'team-ops' },
         metrics: [
@@ -98,9 +115,96 @@ export function buildRequest(rows, { session, stream }) {
   };
 }
 
+// Hook events, by the name they're exported under.
+const EVENT_NAMES = {
+  PostToolUseFailure: 'tool_failure',
+  PermissionDenied: 'permission_denied',
+  SubagentStart: 'agent_start',
+  SubagentStop: 'agent_stop',
+  PreCompact: 'compaction',
+  TaskCreated: 'task_created',
+  TaskCompleted: 'task_completed',
+  StopFailure: 'stop_failure',
+  SessionEnd: 'session_end',
+};
+const WARN = new Set(['tool_failure', 'permission_denied', 'stop_failure', 'friction']);
+
+/** @param {string} type a hook event name, or "friction" @returns {string} e.g. "team_ops.tool_failure" */
+export const eventName = (type) => `team_ops.${EVENT_NAMES[type] || type}`;
+
 /**
- * Exports the current usage of the given sessions. Never throws; the outcome is
- * written to otlp-status.json in the stream directory for troubleshooting.
+ * Builds the OTLP logs request for one local record — an events.jsonl or friction.jsonl
+ * row. Free text goes in only when TEAM_OPS_OTLP_LOG_CONTENT=1.
+ * @param {any} rec the local record
+ * @param {'event' | 'friction'} kind which file it came from
+ * @param {string} stream
+ * @returns {object}
+ */
+export function buildEvent(rec, kind, stream) {
+  const name = eventName(kind === 'friction' ? 'friction' : rec.event);
+  const content = logContent();
+  const a = {
+    'event.name': name,
+    ...FIELDS({ stream, agent: rec.agent, agent_id: rec.agent_id, work: rec.work, parent_work: rec.parent_work }),
+    'hook.event': rec.event,
+    'tool.name': rec.tool,
+    'permission.mode': rec.mode,
+    effort: rec.effort,
+    'friction.kind': rec.kind,
+  };
+  let body;
+  if (content) {
+    Object.assign(a, { 'tool.target': rec.target, 'error.message': rec.error, reason: rec.reason, 'task.description': rec.task });
+    body = rec.note || rec.report || rec.error;
+  }
+  const short = name.slice('team_ops.'.length);
+  const record = {
+    timeUnixNano: nanos(rec.ts),
+    observedTimeUnixNano: `${BigInt(Date.now()) * 1000000n}`,
+    severityNumber: WARN.has(short) ? 13 : 9,
+    severityText: WARN.has(short) ? 'WARN' : 'INFO',
+    eventName: name,
+    attributes: attrs(a),
+    ...(body ? { body: { stringValue: String(body) } } : {}),
+  };
+  return { resourceLogs: [{ resource: resource(rec.session || 'unknown'), scopeLogs: [{ scope: { name: 'team-ops' }, logRecords: [record] }] }] };
+}
+
+/**
+ * POSTs one OTLP request. Never throws.
+ * @param {'metrics' | 'logs'} signal @param {object} body @param {number} timeoutMs
+ * @returns {Promise<string | null>} an error, or null on success
+ */
+async function post(signal, body, timeoutMs) {
+  try {
+    const res = await fetch(/** @type {string} */ (signalUrl(signal)), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...parsePairs(process.env.TEAM_OPS_OTLP_HEADERS) },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    return res.ok ? null : `HTTP ${res.status} ${(await res.text().catch(() => '')).slice(0, 200)}`;
+  } catch (e) {
+    return String(/** @type {any} */ (e)?.cause?.code || /** @type {any} */ (e)?.name || e);
+  }
+}
+
+/**
+ * Records the outcome of an export in otlp-status.json, per signal, for troubleshooting.
+ * @param {string} dir @param {'metrics' | 'logs'} signal @param {number} sent @param {string | null | undefined} error
+ */
+function status(dir, signal, sent, error) {
+  try {
+    const p = join(dir, 'otlp-status.json');
+    let s = {};
+    try { s = JSON.parse(readFileSync(p, 'utf8')); } catch { /* first export */ }
+    s[signal] = { at: new Date().toISOString(), url: signalUrl(signal), sent, ok: !error, error: error || null };
+    writeFileSync(p, JSON.stringify(s, null, 2) + '\n');
+  } catch { /* status is a convenience */ }
+}
+
+/**
+ * Exports the current usage of the given sessions as metrics.
  * @param {string} dir stream directory
  * @param {string} stream stream name
  * @param {Iterable<string>} sessions
@@ -108,8 +212,7 @@ export function buildRequest(rows, { session, stream }) {
  * @returns {Promise<{exported: number, error?: string} | null>} null when export is off
  */
 export async function exportSessions(dir, stream, sessions, opts = {}) {
-  const url = metricsUrl();
-  if (!url) return null;
+  if (!signalUrl('metrics')) return null;
   const want = new Set(sessions);
   const bySession = new Map();
   for (const r of currentUsage(dir)) {
@@ -120,24 +223,27 @@ export async function exportSessions(dir, stream, sessions, opts = {}) {
   let exported = 0;
   let error;
   for (const [session, rows] of bySession) {
-    const body = buildRequest(rows, { session, stream });
+    const body = buildMetrics(rows, { session, stream });
     if (!body) continue;
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...parsePairs(process.env.TEAM_OPS_OTLP_HEADERS) },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(opts.timeoutMs ?? 2000),
-      });
-      if (res.ok) exported++;
-      else { error = `HTTP ${res.status} ${(await res.text().catch(() => '')).slice(0, 200)}`; break; }
-    } catch (e) {
-      error = String(/** @type {any} */ (e)?.cause?.code || /** @type {any} */ (e)?.name || e);
-      break;
-    }
+    error = await post('metrics', body, opts.timeoutMs ?? 2000);
+    if (error) break;
+    exported++;
   }
-  try {
-    writeFileSync(join(dir, 'otlp-status.json'), JSON.stringify({ at: new Date().toISOString(), url, exported, ok: !error, error: error || null }, null, 2) + '\n');
-  } catch { /* status is a convenience */ }
-  return { exported, error };
+  status(dir, 'metrics', exported, error);
+  return { exported, error: error || undefined };
+}
+
+/**
+ * Exports one local record as an event. Best effort: a failure is noted in
+ * otlp-status.json and the record stays in the local file.
+ * @param {string} dir stream directory @param {string} stream
+ * @param {any} rec @param {'event' | 'friction'} kind
+ * @param {{timeoutMs?: number}} [opts]
+ * @returns {Promise<string | null | undefined>} undefined when export is off, else the error or null
+ */
+export async function exportEvent(dir, stream, rec, kind, opts = {}) {
+  if (!signalUrl('logs')) return undefined;
+  const error = await post('logs', buildEvent(rec, kind, stream), opts.timeoutMs ?? 1500);
+  status(dir, 'logs', error ? 0 : 1, error);
+  return error;
 }

@@ -19,6 +19,8 @@ You don't install it directly: `engineering-team` and `design-team` depend on it
 
 **Friction self-reports** — logged by agents through the skill, with a kind: `instructions`, `tooling`, `permissions`, `scope`, `environment`, or `handoff`. The engineering tech lead logs every design problem it routes back to a design package as `handoff`; the design product lead logs specialist rework the same way. Those cross-team handoffs are the strongest signal the coach gets.
 
+**One shape** — every record, hook event, friction report and usage snapshot alike, carries the same fields: the session, the full agent name (read from the subagent's own metadata, since hooks don't always name it), and the unit of work — the tag the lead set with `start-work`, or an agent's own `[TICKET]`. Friction reports pick these up from the session automatically. So friction, failures and cost join on the work they belong to.
+
 **Where it lives** — `~/.claude/ops/<stream>/events.jsonl` and `friction.jsonl`, outside the repo, so every git worktree converges on one stream. The stream name is `stream:` in `.claude/team/project.md`, or in `.claude/team/design.md` if there's no `project.md`, looked up by walking up from the working directory. **The profile must be committed**, or each worktree falls back to its own directory name.
 
 ## Knowledge sources
@@ -43,7 +45,9 @@ A *Codebases* section lists the repositories the work touches beyond this one, e
 
 **How accurate.** Input and cache token counts match Claude Code's own accounting exactly; output tokens per response run somewhat lower than its session totals, so estimates tend to be a few percent to ~10% low. They're API list prices — a Team or Max subscription bills differently.
 
-**Across a team.** Set `TEAM_OPS_OTLP_ENDPOINT` and the same records are exported as OpenTelemetry metrics, next to Claude Code's own cost metrics, to any backend that takes OTLP. [`telemetry/README.md`](telemetry/README.md) covers turning both on, choosing a backend when you have none, and an example Docker stack with a Grafana dashboard.
+## Across a team
+
+Set `TEAM_OPS_OTLP_ENDPOINT` and everything above is also exported as OpenTelemetry, to any backend that takes OTLP: cost as metrics, next to Claude Code's own, and hook events and friction as OTel events. Free text — friction notes, agent reports, errors — stays local unless you opt in. [`telemetry/README.md`](telemetry/README.md) documents the format, turning both exports on, choosing a backend when you have none, and an example Docker stack with a Grafana dashboard.
 
 ## Running the coach
 
@@ -82,7 +86,8 @@ scripts/
   usage.mjs                 token usage snapshot, on SubagentStop and SessionEnd
   usage-lib.mjs             transcript parsing, attribution, pricing
   cost.mjs                  the cost report, called by cost-report
-  otlp.mjs                  OpenTelemetry export of cost per unit of work
+  context.mjs               the fields every record shares: agent, session, work
+  otlp.mjs                  OpenTelemetry export: cost metrics, events
   prices.json               API list prices per model
   coach-guard.mjs           propose-only enforcement
   stream.mjs, profile.mjs   stream resolution from the team profiles
@@ -91,6 +96,6 @@ templates/
   knowledge.md              becomes .claude/team/knowledge.md
   TRENDS.md                 seeded into .claude/ops/reports/ on first run
 telemetry/
-  README.md                 team cost telemetry: setup and backends
-  stack/                    example collector + Prometheus + Grafana, with dashboard
+  README.md                 team telemetry: the format, setup, backends
+  stack/                    example collector + Prometheus + Loki + Grafana, with dashboard
 ```

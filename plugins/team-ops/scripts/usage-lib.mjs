@@ -234,4 +234,4 @@ export function findTranscript(projectsDir, sessionId) {
   return null;
 }
 
-export { readJsonl, basename };
+export { readJsonl, basename, workTags, tagAt, bracketTag };

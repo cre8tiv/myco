@@ -102,7 +102,7 @@ team-ops records the token usage of every lead session and team agent, tagged wi
 
 Figures are API-equivalent estimates at list prices, so on a Team or Max subscription they're a measure of effort rather than a bill. The record is an append-only log in `~/.claude/ops/<stream>/usage.jsonl`, outside the repo: later rounds add to it and nothing is overwritten, so a package's total always includes every round. `agent-coach` uses the same figures to weigh its findings by what they cost.
 
-That's one person's view. For a team's, team-ops exports cost per unit of work as OpenTelemetry metrics alongside Claude Code's own, to whatever observability backend you have, or to an example Prometheus and Grafana stack with a ready-made dashboard: see [Team cost telemetry](plugins/team-ops/telemetry/README.md).
+That's one person's view. For a team's, team-ops exports cost, friction and hook events per unit of work as OpenTelemetry, alongside Claude Code's own telemetry, to whatever observability backend you have, or to an example Prometheus, Loki and Grafana stack with a ready-made dashboard: see [Team telemetry](plugins/team-ops/telemetry/README.md).
 
 ### Knowledge sources
 

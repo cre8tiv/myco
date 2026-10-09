@@ -1,4 +1,5 @@
-# Receives OTLP from Claude Code and team-ops and serves it to Prometheus.
+# Receives OTLP from Claude Code and team-ops: metrics are served to Prometheus, events
+# (OTel logs) are sent to Loki.
 receivers:
   otlp:
     protocols:
@@ -24,6 +25,8 @@ exporters:
     resource_to_telemetry_conversion:
       enabled: true
     translation_strategy: UnderscoreEscapingWithSuffixes
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
 
 service:
   pipelines:
@@ -31,3 +34,7 @@ service:
       receivers: [otlp]
       processors: [memory_limiter, batch]
       exporters: [prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp/loki]
