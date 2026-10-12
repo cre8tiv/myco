@@ -293,4 +293,13 @@ If you change an agent definition:
 - Prefer deleting or tightening over appending.
 - Keep project-specific knowledge out of `agents/` — if it's true of one company's setup and not another's, it belongs in a profile template (`project.md`, `design.md`, `knowledge.md`) or in a setup skill's interview.
 
+### Tests
+
+```sh
+npm test                                  # Node 22 or later; nothing to install
+node --test test/merge-gate.test.mjs      # one file
+node scripts/check-version-bumps.mjs      # the version check CI runs on pull requests
+```
+
+The suite runs the hooks and scripts as Claude Code does, as processes with an event on stdin, against a throwaway home directory, so it never touches your `~/.claude`. It covers the enforcement hooks (the merge gate and the coach guard, including their PowerShell paths), profile parsing, usage attribution and pricing, `cost.mjs`, the OpenTelemetry export, the review-page renderer, and the references between agents, skills, templates and hooks. CI runs it on Linux, macOS and Windows. If you change a hook, add the case that motivated the change to its test file.
 Internals are documented in [`plugins/engineering-team/README.md`](plugins/engineering-team/README.md).
