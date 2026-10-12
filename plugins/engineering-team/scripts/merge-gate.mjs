@@ -22,28 +22,60 @@ const read = () =>
     setTimeout(() => res(b), 4000);
   });
 
+// Shell tools whose commands are inspected. PowerShell is how agents run commands on
+// Windows, so it gets the same scrutiny as Bash.
+const SHELL_TOOLS = new Set(['Bash', 'PowerShell']);
+
+// Does a `git push` segment target the trunk? Tokens are checked rather than the raw
+// text so every spelling of the destination is caught: `main`, `HEAD:main`,
+// `+main`, `HEAD:refs/heads/main`, `'main'`.
+function pushesToTrunk(segment, trunk) {
+  const tokens = segment.split(/\s+/).slice(2); // after `git push`
+  return tokens.some((tok) => {
+    if (!tok || tok.startsWith('-')) return false;
+    const refspec = tok.replace(/^["'`]+|["'`]+$/g, '').replace(/^\+/, '');
+    const dest = refspec.slice(refspec.lastIndexOf(':') + 1).replace(/^refs\/heads\//, '');
+    return dest === trunk;
+  });
+}
+
 // Deliberately narrow. `git merge origin/main` into a feature branch is how an IC
 // keeps its worktree current and must stay allowed; only completing a PR or pushing
 // straight at the trunk is a merge in the sense that needs a human.
 function mergeAttempt(cmd, trunk) {
-  if (/\bgh\s+pr\s+merge\b/i.test(cmd)) return 'gh pr merge';
+  if (/\bgh(\.exe)?\s+pr\s+merge\b/i.test(cmd)) return 'gh pr merge';
+  // The REST endpoint and the GraphQL mutation both complete a PR without `gh pr merge`.
+  if (/\bgh(\.exe)?\s+api\b[\s\S]*(\/pulls\/\d+\/merge\b|\bmergePullRequest\b)/i.test(cmd))
+    return 'gh api pull request merge';
   if (/\baz\s+repos\s+pr\s+(update|complete)\b[\s\S]*\b(completed|--complete)\b/i.test(cmd))
     return 'az repos pr complete';
-  if (/\bgit\s+push\b/i.test(cmd)) {
-    const t = trunk.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    if (new RegExp(`\\bgit\\s+push\\b[^&|;]*(\\s|:)${t}(\\s|$)`, 'i').test(cmd))
-      return `git push to ${trunk}`;
+  // Split on command separators common to Bash and PowerShell, so `git push` is judged
+  // on its own arguments and not on whatever else is on the line.
+  for (const segment of cmd.split(/&&|\|\||[;|\r\n]/)) {
+    const s = segment.trim();
+    if (/^git\s+push\b/i.test(s) && pushesToTrunk(s, trunk)) return `git push to ${trunk}`;
   }
+  return null;
+}
+
+// A merge or completion tool exposed by an MCP server (GitHub, Azure DevOps, ...).
+function mcpMergeAttempt(toolName, input) {
+  if (!/^mcp__/i.test(toolName)) return null;
+  if (/merge/i.test(toolName)) return toolName;
+  if (/pull_?request/i.test(toolName) && /^(completed|complete)$/i.test(String(input?.status || '')))
+    return `${toolName} (status: completed)`;
   return null;
 }
 
 try {
   const e = JSON.parse((await read()) || '{}');
-  if (e.agent_type && e.tool_name === 'Bash') {
+  if (e.agent_type) {
     const policy = (profileKey(e.cwd, 'merge_policy', 'human-approval') || '').toLowerCase();
     if (policy !== 'autonomous') {
       const trunk = profileKey(e.cwd, 'trunk_branch', 'main') || 'main';
-      const what = mergeAttempt(e.tool_input?.command || '', trunk);
+      const what = SHELL_TOOLS.has(e.tool_name)
+        ? mergeAttempt(e.tool_input?.command || '', trunk)
+        : mcpMergeAttempt(e.tool_name || '', e.tool_input);
       if (what) {
         console.error(
           `Blocked: this project's merge_policy is "${policy}", so merging is a human's ` +
