@@ -1,0 +1,4 @@
+# Scripts must keep Unix line endings in every checkout: a CRLF scaffold script fails
+# under bash, and hook scripts are compared byte for byte in tests.
+*.sh text eol=lf
+*.mjs text eol=lf
