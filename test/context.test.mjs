@@ -86,6 +86,29 @@ describe('resolveContext', () => {
     assert.equal(ctx.work, 'CLOUD-2');
   });
 
+  test('work tags are found among many rows, and rows that merely mention the skill or the setting are not mistaken for them', (t) => {
+    const sb = sandbox(t);
+    useHome(sb);
+    const noise = (at, text) => assistant({ at, usage: usage({}), content: [{ type: 'text', text }] });
+    const { transcriptPath } = writeSession({
+      home: sb.home,
+      sessionId: 'sess-big',
+      lead: 'engineering-team:tech-lead',
+      rows: [
+        ...Array.from({ length: 200 }, (_, i) => noise(i, `working on step ${i}`)),
+        noise(201, 'I will run start-work and then log "agent-setting" changes'),
+        startWork(202, 'CLOUD-7'),
+        noise(203, 'more'),
+        { type: 'agent-setting', agentSetting: 'a-later-setting-is-ignored' },
+        startWork(300, 'CLOUD-8'),
+      ],
+    });
+    const early = resolveContext({ transcriptPath, sessionId: 'sess-big', at: ts(250) });
+    assert.equal(early.work, 'CLOUD-7');
+    assert.equal(early.agent, 'engineering-team:tech-lead');
+    assert.equal(resolveContext({ transcriptPath, sessionId: 'sess-big', at: ts(350) }).work, 'CLOUD-8');
+  });
+
   test('without a session there is nothing to resolve, and nothing is invented', () => {
     const ctx = resolveContext({ agentType: 'engineering-team:ic-generalist' });
     assert.deepEqual(ctx, { agent: 'engineering-team:ic-generalist', agent_id: null, session: null, work: null, parent_work: null });
