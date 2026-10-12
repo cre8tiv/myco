@@ -302,4 +302,6 @@ node scripts/check-version-bumps.mjs      # the version check CI runs on pull re
 ```
 
 The suite runs the hooks and scripts as Claude Code does, as processes with an event on stdin, against a throwaway home directory, so it never touches your `~/.claude`. It covers the enforcement hooks (the merge gate and the coach guard, including their PowerShell paths), profile parsing, usage attribution and pricing, `cost.mjs`, the OpenTelemetry export, the review-page renderer, and the references between agents, skills, templates and hooks. CI runs it on Linux, macOS and Windows. If you change a hook, add the case that motivated the change to its test file.
+
+Behavior evals, which check what the agents and skills do with a real model, live in [`evals/`](evals/README.md). They cost money, so they run locally with `npm run eval` and not in CI.
 Internals are documented in [`plugins/engineering-team/README.md`](plugins/engineering-team/README.md).
