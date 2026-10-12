@@ -291,6 +291,7 @@ If you change an agent definition:
 - **Bump the plugin's `version` in its `plugin.json`.** An installed plugin is pinned to its version: `/plugin update` does nothing for a change that keeps the same version, so the change never reaches anyone. Use a minor bump for behavior changes and a patch bump for fixes.
 - Say what signal you expect to move.
 - Prefer deleting or tightening over appending.
+- **Text that several agents share lives in one place.** Wrapped in `<!-- shared:NAME -->` markers, it is copied from `shared/agent-blocks/NAME.md`. Edit that file, run `npm run sync:agents`, and commit the result; a test fails if any copy differs, or if shared text is pasted into an agent without markers.
 - Keep project-specific knowledge out of `agents/` — if it's true of one company's setup and not another's, it belongs in a profile template (`project.md`, `design.md`, `knowledge.md`) or in a setup skill's interview.
 
 ### Tests

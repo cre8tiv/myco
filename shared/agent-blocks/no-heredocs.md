@@ -1,0 +1,1 @@
+**Write files with the Write and Edit tools, not shell heredocs or `echo` redirection, and pass long text to CLIs from a file** (`gh pr create --body-file`, `gh pr comment --body-file`). Heredoc writes are refused inside isolated worktrees, and long heredocs break on Windows shells.
