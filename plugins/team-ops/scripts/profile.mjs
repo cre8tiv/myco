@@ -6,8 +6,13 @@
 // starting directory, so a value resolves identically from the repo root and from
 // any IC's git worktree, provided the profile is committed.
 //
-// Only flat `key: value` pairs in the YAML frontmatter are parsed. Every failure
-// returns undefined rather than throwing: callers are hooks.
+// Only flat `key: value` pairs in the YAML frontmatter are parsed. A value that is
+// empty, a comment, or an unfilled `<placeholder>` counts as unset, so callers get
+// their fallback rather than the template's literal text. Every failure returns
+// undefined rather than throwing: callers are hooks.
+//
+// engineering-team ships a byte-identical copy of this file, because plugins install
+// independently and can't import from each other. Change both together.
 import { readFileSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 
@@ -21,7 +26,10 @@ function frontmatter(path) {
     for (const line of m[1].split(/\r?\n/)) {
       const kv = line.match(/^([A-Za-z_][A-Za-z0-9_]*):[ \t]*(.*)$/);
       if (!kv) continue;
-      const value = kv[2].trim().replace(/^["']|["']$/g, '');
+      let raw = kv[2].trim();
+      // An inline comment ends an unquoted value: `trunk_branch: main  # our trunk`.
+      if (!/^["']/.test(raw)) raw = raw.replace(/\s+#.*$/, '');
+      const value = raw.replace(/^["']|["']$/g, '');
       if (value && !value.startsWith('#') && !value.startsWith('<')) keys[kv[1]] = value;
     }
     return keys;
