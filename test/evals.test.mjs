@@ -140,7 +140,8 @@ describe('skill-trigger cases', () => {
     // it measures nothing about the description it is meant to protect.
     for (const { c, skill, fires } of skillGraders) {
       if (!fires) continue;
-      const prompt = read(join(c.dir, 'prompt.md')).replace(/^---[\s\S]*?\n---\n/, '').toLowerCase();
+      // Markdown checks out with CRLF line endings on Windows.
+      const prompt = read(join(c.dir, 'prompt.md')).replace(/\r\n/g, '\n').replace(/^---[\s\S]*?\n---\n/, '').toLowerCase();
       for (const word of skill.split('-').filter((w) => w.length > 3)) {
         assert.equal(new RegExp(`\\b${word}\\b`).test(prompt), false, `${c.name}: the prompt says "${word}", part of the skill name "${skill}"`);
       }
