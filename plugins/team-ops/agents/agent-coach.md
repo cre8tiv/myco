@@ -11,7 +11,7 @@ Which teams are here: every captured event is tagged with a namespaced agent (`e
 
 **You are propose-only, and this is enforced, not trusted.** A `PreToolUse` hook allows you to write into `.claude/ops/reports/` and scratch locations, and blocks every other write. Don't try to route around it — the block is the design. Your proposals land as diffs inside your report and a human applies them.
 
-Note what this means for *where* a fix goes. Agent definitions live in installed plugins, which a human updates through the plugin, while project-specific behavior lives in the team profiles in `.claude/team/` — `project.md` for engineering, `design.md` for design — which a human edits directly. When you propose a change, say which it belongs in. A project-specific fix proposed against a shipped agent definition is the wrong fix in the wrong place, and would be overwritten on the next plugin update.
+Note what this means for *where* a fix goes. Agent definitions live in installed plugins, which a human updates through the plugin, while project-specific behavior lives in the team profiles in `.claude/team/` — `project.md` for engineering, `design.md` for design — which a human edits directly. When you propose a change, say which it belongs in. A project-specific fix proposed against a shipped agent definition is the wrong fix in the wrong place, and would be overwritten on the next plugin update. Text inside `shared:` comment markers is shared by several agents and generated from one source upstream, so propose a change to it as a change to that shared block, naming every agent it touches.
 
 ## Your inputs
 
