@@ -26,12 +26,72 @@ const read = () =>
 // Windows, so it gets the same scrutiny as Bash.
 const SHELL_TOOLS = new Set(['Bash', 'PowerShell']);
 
-// Does a `git push` segment target the trunk? Tokens are checked rather than the raw
+// Splits a command line into commands at the separators Bash and PowerShell share
+// (; && || | and newlines), honoring quotes and skipping heredoc bodies. Each command
+// comes back twice: as written, and with quoted text blanked, so that a commit message
+// that mentions `gh pr merge` is not mistaken for running it.
+function commands(cmd) {
+  /** @type {{raw: string, blank: string}[]} */
+  const out = [];
+  let raw = '';
+  let blank = '';
+  let quote = null;
+  const flush = () => {
+    if (raw.trim()) out.push({ raw: raw.trim(), blank: blank.trim() });
+    raw = '';
+    blank = '';
+  };
+  for (let i = 0; i < cmd.length; i++) {
+    const c = cmd[i];
+    if (quote) {
+      raw += c;
+      if (quote === '"' && c === String.fromCharCode(92) && cmd[i + 1] === '"') raw += cmd[++i];
+      else if (c === quote) {
+        quote = null;
+        blank += '"';
+      }
+    } else if (c === '"' || c === "'") {
+      quote = c;
+      raw += c;
+      blank += '"';
+    } else if (c === '\n' || c === '\r') {
+      const heredoc = raw.match(/<<-?\s*(['"]?)([A-Za-z_]\w*)\1/);
+      flush();
+      if (heredoc && c === '\n') {
+        // Skip the body: it is text for the command, not commands.
+        let j = i + 1;
+        while (j < cmd.length) {
+          const end = cmd.indexOf('\n', j);
+          const line = cmd.slice(j, end < 0 ? cmd.length : end);
+          j = end < 0 ? cmd.length : end + 1;
+          if (line.trim() === heredoc[2]) break;
+        }
+        i = j - 1;
+      }
+    } else if (c === ';' || c === '|' || (c === '&' && cmd[i + 1] === '&')) {
+      flush();
+      if (cmd[i + 1] === c) i++;
+    } else {
+      raw += c;
+      blank += c;
+    }
+  }
+  flush();
+  return out;
+}
+
+// What can precede a command without changing what it is: `FOO=1 gh ...`, `sudo gh ...`.
+const PREFIX = /^(?:(?:\w+=\S*|sudo|time|command|&)\s+)+/i;
+// `git -C dir push`, `git -c k=v push`: global options between git and the subcommand.
+const GIT_PUSH = /^git(?:\s+(?:-C|-c)\s+\S+|\s+--[\w-]+(?:=\S+)?)*\s+push\b/i;
+const SHELL_C = /^(?:bash|sh|zsh|pwsh|powershell)(?:\.exe)?(?:\s+[^"']*?)?\s+-(?:c|lc|command)\s+(["'])([\s\S]*)\1\s*$/i;
+
+// Does a `git push` command target the trunk? Tokens are checked rather than the raw
 // text so every spelling of the destination is caught: `main`, `HEAD:main`,
 // `+main`, `HEAD:refs/heads/main`, `'main'`.
-function pushesToTrunk(segment, trunk) {
-  const tokens = segment.split(/\s+/).slice(2); // after `git push`
-  return tokens.some((tok) => {
+function pushesToTrunk(raw, trunk) {
+  const tokens = raw.split(/\s+/);
+  return tokens.slice(tokens.findIndex((t) => /^push$/i.test(t)) + 1).some((tok) => {
     if (!tok || tok.startsWith('-')) return false;
     const refspec = tok.replace(/^["'`]+|["'`]+$/g, '').replace(/^\+/, '');
     const dest = refspec.slice(refspec.lastIndexOf(':') + 1).replace(/^refs\/heads\//, '');
@@ -42,18 +102,23 @@ function pushesToTrunk(segment, trunk) {
 // Deliberately narrow. `git merge origin/main` into a feature branch is how an IC
 // keeps its worktree current and must stay allowed; only completing a PR or pushing
 // straight at the trunk is a merge in the sense that needs a human.
-function mergeAttempt(cmd, trunk) {
-  if (/\bgh(\.exe)?\s+pr\s+merge\b/i.test(cmd)) return 'gh pr merge';
-  // The REST endpoint and the GraphQL mutation both complete a PR without `gh pr merge`.
-  if (/\bgh(\.exe)?\s+api\b[\s\S]*(\/pulls\/\d+\/merge\b|\bmergePullRequest\b)/i.test(cmd))
-    return 'gh api pull request merge';
-  if (/\baz\s+repos\s+pr\s+(update|complete)\b[\s\S]*\b(completed|--complete)\b/i.test(cmd))
-    return 'az repos pr complete';
-  // Split on command separators common to Bash and PowerShell, so `git push` is judged
-  // on its own arguments and not on whatever else is on the line.
-  for (const segment of cmd.split(/&&|\|\||[;|\r\n]/)) {
-    const s = segment.trim();
-    if (/^git\s+push\b/i.test(s) && pushesToTrunk(s, trunk)) return `git push to ${trunk}`;
+function mergeAttempt(cmd, trunk, depth = 0) {
+  for (const { raw: rawCmd, blank: blankCmd } of commands(cmd)) {
+    const raw = rawCmd.replace(PREFIX, '');
+    const blank = blankCmd.replace(PREFIX, '');
+    if (/^gh(\.exe)?\s+pr\s+merge\b/i.test(blank)) return 'gh pr merge';
+    // The REST endpoint and the GraphQL mutation both complete a PR without `gh pr merge`.
+    if (/^gh(\.exe)?\s+api\b/i.test(blank) && /(\/pulls\/\d+\/merge\b|\bmergePullRequest\b)/i.test(raw))
+      return 'gh api pull request merge';
+    if (/^az\s+repos\s+pr\s+(update|complete|set-auto-complete)\b/i.test(blank) && /\b(completed|complete|--complete|--auto-complete)\b/i.test(raw))
+      return 'az repos pr complete';
+    if (GIT_PUSH.test(blank) && pushesToTrunk(raw, trunk)) return `git push to ${trunk}`;
+    // `bash -c "gh pr merge 1"`: the quoted text is the command here.
+    const inner = depth < 3 && raw.match(SHELL_C);
+    if (inner) {
+      const what = mergeAttempt(inner[2], trunk, depth + 1);
+      if (what) return what;
+    }
   }
   return null;
 }
