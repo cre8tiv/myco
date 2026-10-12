@@ -5,11 +5,20 @@
 // and nothing else. It reads everything — agent definitions, transcripts, git
 // history, team profiles — and argues for changes in a report a human applies.
 //
+// File tools are judged by their target path. Shell tools (Bash and PowerShell) are
+// judged by what each command writes to: its redirect targets, and the path
+// arguments of commands that modify files. A path that merely appears elsewhere on
+// the line doesn't make a write acceptable. This is a guard against accidents, not a
+// sandbox: a script that writes files from inside an interpreter (`node -e`,
+// `python -c`) isn't inspected.
+//
 // Plugin agents arrive namespaced ("team-ops:agent-coach"), so the role is matched
 // after the last colon; a bare name matches too.
 //
 // Exit 2 blocks the call and returns stderr to the agent. Any internal error exits
 // 0 — a broken guard must never block legitimate work.
+import { posix } from 'node:path';
+
 const read = () =>
   new Promise((res) => {
     let b = '';
@@ -20,10 +29,156 @@ const read = () =>
     setTimeout(() => res(b), 4000);
   });
 
-const ALLOWED = [/\.claude\/ops\/reports\//i, /(^|\/)(tmp|temp)\//i, /\/scratchpad\//i];
+const ALLOWED = [/(^|\/)\.claude\/ops\/reports\//i, /(^|\/)(tmp|temp)\//i, /\/scratchpad\//i];
 
-const MUTATING_CMD =
-  /\b(sed\s+-i|tee|dd|truncate|Set-Content|Out-File|Add-Content|Copy-Item|Move-Item|Remove-Item)\b|\b(cp|mv|rm)\s/i;
+/** Places a redirect may point at without writing a file. */
+const SINKS = new Set(['/dev/null', '$null', 'nul']);
+
+const FILE_TOOLS = ['Write', 'Edit', 'NotebookEdit'];
+const SHELL_TOOLS = ['Bash', 'PowerShell'];
+
+/** Commands that modify files, including PowerShell cmdlets and their aliases. */
+const MUTATING = new Set([
+  'cp', 'mv', 'rm', 'tee', 'dd', 'truncate', 'touch', 'mkdir', 'rmdir', 'ln', 'install',
+  'copy', 'move', 'del', 'erase', 'ren', 'rd', 'md',
+  'set-content', 'add-content', 'clear-content', 'out-file', 'copy-item', 'move-item',
+  'remove-item', 'new-item', 'rename-item', 'set-item', 'sc', 'ac', 'cpi', 'mi', 'ri',
+  'ni', 'rni',
+]);
+
+/** Shells whose -c / -Command argument is itself a command line to inspect. */
+const SHELLS = new Set(['bash', 'sh', 'zsh', 'pwsh', 'powershell', 'cmd']);
+
+/** PowerShell parameters whose value is content or a setting, not a path. */
+const NON_PATH_PARAMS = new Set(['-encoding', '-value', '-itemtype', '-filter', '-include', '-exclude', '-width']);
+
+/** @param {string} p @returns {string} forward-slashed and normalized, so `a/../b` can't hide a target */
+const normalize = (p) => posix.normalize(p.split('\\').join('/'));
+
+/** @param {string} p @returns {boolean} whether the coach may write to this path */
+const allowed = (p) => ALLOWED.some((re) => re.test(normalize(p)));
+
+/** Looks like a path rather than a value: has a separator, an extension, or is home/variable-relative. */
+const pathLike = (t) => /[\\/]/.test(t) || /\.[A-Za-z0-9]+$/.test(t) || /^[~$]/.test(t);
+
+/**
+ * Splits a command line into words, command separators and redirects, honoring quotes.
+ * The same rules serve Bash and PowerShell: both quote with ' and ", chain with ; && ||
+ * and |, and redirect with > and >>.
+ * @param {string} cmd
+ * @returns {({sep: true} | {redir: true, dup: boolean} | {text: string, quoted: boolean})[]}
+ */
+function tokenize(cmd) {
+  const toks = [];
+  let cur = '';
+  let quoted = false;
+  let has = false;
+  const flush = () => {
+    if (has) toks.push({ text: cur, quoted });
+    cur = '';
+    quoted = false;
+    has = false;
+  };
+  for (let i = 0; i < cmd.length; i++) {
+    const c = cmd[i];
+    if (c === "'" || c === '"') {
+      const end = cmd.indexOf(c, i + 1);
+      cur += cmd.slice(i + 1, end < 0 ? cmd.length : end);
+      quoted = true;
+      has = true;
+      i = end < 0 ? cmd.length : end;
+    } else if (c === '\n' || c === '\r' || c === ';') {
+      flush();
+      toks.push({ sep: true });
+    } else if (c === '|' || (c === '&' && cmd[i + 1] === '&')) {
+      flush();
+      toks.push({ sep: true });
+      if (cmd[i + 1] === c) i++;
+    } else if (c === '>') {
+      // `2>`, `2>&1` and `&>`: a leading file descriptor isn't a word.
+      if (has && !quoted && /^\d+$/.test(cur)) {
+        cur = '';
+        has = false;
+      } else flush();
+      if (cmd[i + 1] === '>') i++;
+      let dup = false;
+      if (cmd[i + 1] === '&') {
+        dup = true;
+        i++;
+        while (/[\d-]/.test(cmd[i + 1] || '')) i++;
+      }
+      toks.push({ redir: true, dup });
+    } else if (/\s/.test(c) || c === '&') {
+      flush();
+    } else {
+      cur += c;
+      has = true;
+    }
+  }
+  flush();
+  return toks;
+}
+
+/**
+ * The first write in a command line that isn't to an allowed location.
+ * @param {string} cmd
+ * @param {number} [depth] recursion through `bash -c "..."`
+ * @returns {string | null} the offending target, or null when every write is allowed
+ */
+function disallowedWrite(cmd, depth = 0) {
+  const toks = tokenize(cmd);
+  /** @type {any[][]} */
+  const segments = [[]];
+  for (const t of toks) {
+    if ('sep' in t) segments.push([]);
+    else segments[segments.length - 1].push(t);
+  }
+
+  for (const seg of segments) {
+    /** @type {{text: string, quoted: boolean}[]} */
+    const words = [];
+    for (let i = 0; i < seg.length; i++) {
+      if ('redir' in seg[i]) {
+        const target = seg[i + 1];
+        if (!seg[i].dup && target && 'text' in target) {
+          if (!SINKS.has(target.text.toLowerCase()) && !allowed(target.text)) return target.text;
+          i++;
+        }
+      } else words.push(seg[i]);
+    }
+
+    // Skip env assignments and wrappers to reach the command itself.
+    let v = 0;
+    while (v < words.length && (/^\w+=/.test(words[v].text) || words[v].text === 'sudo')) v++;
+    if (v >= words.length) continue;
+    const verb = (words[v].text.split(/[\\/]/).pop() || '').toLowerCase().replace(/\.exe$/, '');
+    const args = words.slice(v + 1);
+
+    if (SHELLS.has(verb) && depth < 3) {
+      const i = args.findIndex((a) => /^(-c|-lc|-command|\/c)$/i.test(a.text));
+      if (i >= 0 && args[i + 1]) {
+        const inner = disallowedWrite(args[i + 1].text, depth + 1);
+        if (inner) return inner;
+      }
+    }
+
+    const inPlace = (verb === 'sed' || verb === 'perl') && args.some((a) => /^-(?!-)[A-Za-z]*i|^--in-place/.test(a.text));
+    if (!MUTATING.has(verb) && !inPlace) continue;
+
+    for (let i = 0; i < args.length; i++) {
+      const a = args[i];
+      if (a.text.startsWith('-') && !a.quoted) {
+        if (NON_PATH_PARAMS.has(a.text.toLowerCase())) i++;
+        continue;
+      }
+      // A quoted word that isn't path-shaped is content (`Set-Content f "text"`).
+      if (a.quoted && !pathLike(a.text)) continue;
+      const path = a.text.replace(/^of=/, '');
+      if (!allowed(path)) return path;
+    }
+  }
+  return null;
+}
 
 try {
   const e = JSON.parse((await read()) || '{}');
@@ -31,18 +186,20 @@ try {
 
   if (role === 'agent-coach') {
     const ti = e.tool_input || {};
-    const cmd = ti.command || '';
-    const blob = [ti.file_path, cmd, ti.notebook_path].filter(Boolean).join(' ').split('\\').join('/');
-    const isWrite =
-      ['Write', 'Edit', 'NotebookEdit'].includes(e.tool_name) ||
-      (e.tool_name === 'Bash' && (MUTATING_CMD.test(cmd) || />{1,2}/.test(cmd)));
+    let offending = null;
+    if (FILE_TOOLS.includes(e.tool_name)) {
+      const target = ti.file_path || ti.notebook_path;
+      if (target && !allowed(target)) offending = target;
+    } else if (SHELL_TOOLS.includes(e.tool_name)) {
+      offending = disallowedWrite(ti.command || '');
+    }
 
-    if (isWrite && !ALLOWED.some((re) => re.test(blob))) {
+    if (offending) {
       console.error(
-        'Blocked: agent-coach is propose-only. The only place you may write is ' +
-          '.claude/ops/reports/. Put the recommendation in your report as a fenced diff ' +
-          'and let a human apply it — agent definitions, team profiles and your own ' +
-          'instrumentation are not yours to edit.',
+        `Blocked: agent-coach is propose-only, and "${offending}" is not a place you may write. ` +
+          'The only place you may write is .claude/ops/reports/ (or a scratch directory). ' +
+          'Put the recommendation in your report as a fenced diff and let a human apply it — ' +
+          'agent definitions, team profiles and your own instrumentation are not yours to edit.',
       );
       process.exit(2);
     }
