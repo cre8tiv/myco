@@ -8,7 +8,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { readJsonl, workTags, tagAt, bracketTag, findTranscript } from './usage-lib.mjs';
+import { readJsonlMatching, workTags, tagAt, bracketTag, findTranscript } from './usage-lib.mjs';
 
 /** @typedef {{agent: string | null, agent_id: string | null, session: string | null, work: string | null, parent_work: string | null}} Context */
 
@@ -44,7 +44,8 @@ export function resolveContext({ transcriptPath, sessionId, agentId, agentType, 
   if (!sessionId) return ctx;
   const t = transcriptPath && existsSync(transcriptPath) ? transcriptPath : findTranscript(join(homedir(), '.claude', 'projects'), sessionId);
   if (!t) return ctx;
-  const rows = readJsonl(t);
+  // Only two kinds of row matter here, so don't parse the rest of a long transcript.
+  const rows = readJsonlMatching(t, ['"agent-setting"', 'start-work']);
   const lead = rows.find((r) => r.type === 'agent-setting')?.agentSetting;
   ctx.parent_work = tagAt(workTags(rows), at || new Date().toISOString());
   ctx.work = ctx.parent_work;

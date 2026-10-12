@@ -34,6 +34,23 @@ function readJsonl(p) {
 }
 
 /**
+ * Only the rows whose line contains one of `needles`. A hook runs on every event and a
+ * session transcript grows without bound, so parsing every line there is the cost that
+ * matters; the work tag and the lead's name sit on a few identifiable lines. The needle
+ * is a plain substring test, so it may admit a row it shouldn't (the caller still checks
+ * the parsed row) but never drops one it should keep.
+ * @param {string} p @param {string[]} needles @returns {any[]}
+ */
+function readJsonlMatching(p, needles) {
+  const rows = [];
+  for (const line of readFileSync(p, 'utf8').split('\n')) {
+    if (!needles.some((n) => line.includes(n))) continue;
+    try { rows.push(JSON.parse(line)); } catch { /* a partial last line while the file is being written */ }
+  }
+  return rows;
+}
+
+/**
  * Model responses in a transcript, one per API message. A response is written as one
  * line per content block, each repeating the same usage, so dedupe by message id.
  * @param {any[]} rows
@@ -234,4 +251,4 @@ export function findTranscript(projectsDir, sessionId) {
   return null;
 }
 
-export { readJsonl, basename, workTags, tagAt, bracketTag };
+export { readJsonl, readJsonlMatching, basename, workTags, tagAt, bracketTag };
