@@ -3,7 +3,8 @@
 // does every day that must never be.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { sandbox, runHook, script, writeProfile } from './helpers.mjs';
 
@@ -255,5 +256,180 @@ describe('failing safe', () => {
     const sb = sandbox(t);
     const r = await runHook(GATE, { agent_type: LEAD, cwd: sb.project, tool_name: 'Bash' }, { env: sb.env });
     assert.equal(r.status, 0);
+  });
+});
+
+// Autonomous means no human approval, not no QA: a PR can only merge if its branch carries
+// a passing QA report for the code being merged. These tests use real git repositories (an
+// origin and a clone) and a stand-in for `gh` that answers `pr view` with the head branch.
+describe('merge_policy: autonomous requires a passing QA run', () => {
+  const git = (cwd, ...args) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.com', ...args], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+
+  /**
+   * A project cloned from an origin, with a feature branch `feat/x` pushed to it.
+   * @param {ReturnType<typeof sandbox>} sb
+   */
+  function repo(sb) {
+    const origin = join(sb.root, 'origin.git');
+    mkdirSync(origin);
+    git(origin, 'init', '-q', '--bare', '-b', 'main');
+    git(sb.project, 'init', '-q', '-b', 'main');
+    git(sb.project, 'remote', 'add', 'origin', origin);
+    writeFileSync(join(sb.project, 'app.js'), 'one\n');
+    git(sb.project, 'add', 'app.js');
+    git(sb.project, 'commit', '-q', '-m', 'base');
+    git(sb.project, 'push', '-q', 'origin', 'main');
+    git(sb.project, 'checkout', '-q', '-b', 'feat/x');
+    writeFileSync(join(sb.project, 'app.js'), 'two\n');
+    git(sb.project, 'commit', '-q', '-am', 'change');
+    const ghStub = join(sb.root, 'gh-stub.mjs');
+    writeFileSync(ghStub, "if (process.argv.includes('99')) process.exit(1);\nconsole.log(JSON.stringify({ headRefName: 'feat/x' }));\n");
+    writeProfile(sb.project, { merge_policy: 'autonomous' });
+    const push = () => git(sb.project, 'push', '-q', 'origin', 'feat/x');
+    /** Commits a QA report, as the qa-specialist does, and pushes. */
+    const qaReport = (dir, lines, { sha = git(sb.project, 'rev-parse', 'HEAD') } = {}) => {
+      mkdirSync(join(sb.project, '.claude', 'qa', 'runs', dir), { recursive: true });
+      const body = lines.map((l) => l.replace('<sha>', sha)).join('\n') + '\n';
+      writeFileSync(join(sb.project, '.claude', 'qa', 'runs', dir, 'report.md'), body);
+      git(sb.project, 'add', '.claude/qa');
+      git(sb.project, 'commit', '-q', '-m', `qa ${dir}`);
+      push();
+    };
+    push();
+    return { qaReport, push, env: { ...sb.env, MERGE_GATE_GH: ghStub } };
+  }
+  const run = (sb, r, command) => runHook(GATE, { agent_type: LEAD, cwd: sb.project, tool_name: 'Bash', tool_input: { command } }, { env: r.env });
+  const PASS = ['# QA run', 'Verdict: Pass', 'Tested SHA: <sha>'];
+
+  test('a Pass for the code being merged lets the merge through', async (t) => {
+    const sb = sandbox(t);
+    const r = repo(sb);
+    r.qaReport('2026-10-12-X-1', PASS);
+    assert.equal((await run(sb, r, 'gh pr merge 42 --squash')).status, 0);
+  });
+
+  test('Pass with caveats is accepted, and markdown emphasis in the report is tolerated', async (t) => {
+    const sb = sandbox(t);
+    const r = repo(sb);
+    r.qaReport('2026-10-12-X-1', ['**Verdict:** Pass with caveats', '- **Tested SHA:** <sha>']);
+    assert.equal((await run(sb, r, 'gh pr merge 42')).status, 0);
+  });
+
+  test('no QA report on the branch blocks the merge, and says what to do', async (t) => {
+    const sb = sandbox(t);
+    const r = repo(sb);
+    const out = await run(sb, r, 'gh pr merge 42');
+    assert.equal(out.status, 2);
+    assert.match(out.stderr, /no QA run report/);
+    assert.match(out.stderr, /qa-specialist/);
+  });
+
+  test('a Fail or Blocked verdict blocks', async (t) => {
+    for (const verdict of ['Fail', 'Blocked']) {
+      const sb = sandbox(t);
+      const r = repo(sb);
+      r.qaReport('2026-10-12-X-1', [`Verdict: ${verdict}`, 'Tested SHA: <sha>']);
+      const out = await run(sb, r, 'gh pr merge 42');
+      assert.equal(out.status, 2, verdict);
+      assert.match(out.stderr, new RegExp(`verdict "${verdict}"`));
+    }
+  });
+
+  test('the latest run decides: a later Pass clears an earlier Fail, a later Fail overrides a Pass', async (t) => {
+    const sb = sandbox(t);
+    const r = repo(sb);
+    r.qaReport('2026-10-10-X-1', ['Verdict: Fail', 'Tested SHA: <sha>']);
+    r.qaReport('2026-10-11-X-1', PASS);
+    assert.equal((await run(sb, r, 'gh pr merge 42')).status, 0);
+    r.qaReport('2026-10-12-X-1', ['Verdict: Fail', 'Tested SHA: <sha>']);
+    assert.equal((await run(sb, r, 'gh pr merge 42')).status, 2);
+  });
+
+  test('a report with no verdict, or no tested SHA, blocks', async (t) => {
+    const sb = sandbox(t);
+    const r = repo(sb);
+    r.qaReport('2026-10-12-X-1', ['All scenarios ran.']);
+    assert.equal((await run(sb, r, 'gh pr merge 42')).status, 2);
+    r.qaReport('2026-10-12-X-2', ['Verdict: Pass']);
+    const out = await run(sb, r, 'gh pr merge 42');
+    assert.equal(out.status, 2);
+    assert.match(out.stderr, /Tested SHA/);
+  });
+
+  test('code pushed after QA tested it makes the Pass stale', async (t) => {
+    const sb = sandbox(t);
+    const r = repo(sb);
+    r.qaReport('2026-10-12-X-1', PASS);
+    writeFileSync(join(sb.project, 'app.js'), 'three\n');
+    git(sb.project, 'commit', '-q', '-am', 'late fix');
+    r.push();
+    const out = await run(sb, r, 'gh pr merge 42');
+    assert.equal(out.status, 2);
+    assert.match(out.stderr, /changed after QA tested.*app\.js/);
+  });
+
+  test('QA files committed after the tested SHA do not make it stale', async (t) => {
+    const sb = sandbox(t);
+    const r = repo(sb);
+    r.qaReport('2026-10-12-X-1', PASS);
+    mkdirSync(join(sb.project, '.claude', 'qa', 'scripts'), { recursive: true });
+    writeFileSync(join(sb.project, '.claude', 'qa', 'scripts', 'smoke.sh'), 'echo ok\n');
+    git(sb.project, 'add', '.claude/qa');
+    git(sb.project, 'commit', '-q', '-m', 'qa script');
+    r.push();
+    assert.equal((await run(sb, r, 'gh pr merge 42')).status, 0);
+  });
+
+  test('a tested SHA that is not in the branch blocks', async (t) => {
+    const sb = sandbox(t);
+    const r = repo(sb);
+    r.qaReport('2026-10-12-X-1', PASS, { sha: 'deadbeefdeadbeef' });
+    const out = await run(sb, r, 'gh pr merge 42');
+    assert.equal(out.status, 2);
+    assert.match(out.stderr, /not in feat\/x's history/);
+  });
+
+  test('the REST merge endpoint is held to the same rule', async (t) => {
+    const sb = sandbox(t);
+    const r = repo(sb);
+    assert.equal((await run(sb, r, 'gh api -X PUT repos/acme/app/pulls/42/merge')).status, 2);
+    r.qaReport('2026-10-12-X-1', PASS);
+    assert.equal((await run(sb, r, 'gh api -X PUT repos/acme/app/pulls/42/merge')).status, 0);
+  });
+
+  test('flags and their values around the PR number do not confuse the lookup', async (t) => {
+    const sb = sandbox(t);
+    const r = repo(sb);
+    assert.equal((await run(sb, r, 'gh pr merge --squash --subject "fix it" 42 --delete-branch')).status, 2);
+  });
+
+  test('when the check cannot run at all, the merge is not blocked', async (t) => {
+    const sb = sandbox(t);
+    const r = repo(sb);
+    // The gh stand-in fails for PR 99, as gh would when missing or offline.
+    assert.equal((await run(sb, r, 'gh pr merge 99')).status, 0);
+    // And a project that is not a git repository at all.
+    const plain = join(sb.root, 'plain');
+    mkdirSync(plain);
+    writeProfile(plain, { merge_policy: 'autonomous' });
+    assert.equal((await runHook(GATE, { agent_type: LEAD, cwd: plain, tool_name: 'Bash', tool_input: { command: 'gh pr merge 42' } }, { env: r.env })).status, 0);
+  });
+
+  test('a push to the trunk and non-merge commands are not subject to the QA check', async (t) => {
+    const sb = sandbox(t);
+    const r = repo(sb);
+    for (const command of ['git push origin main', 'gh pr view 42', 'git merge origin/main']) {
+      assert.equal((await run(sb, r, command)).status, 0, command);
+    }
+  });
+
+  test('human-approval still blocks every merge, report or not', async (t) => {
+    const sb = sandbox(t);
+    const r = repo(sb);
+    writeProfile(sb.project, { merge_policy: 'human-approval' });
+    r.qaReport('2026-10-12-X-1', PASS);
+    const out = await run(sb, r, 'gh pr merge 42');
+    assert.equal(out.status, 2);
+    assert.match(out.stderr, /merging is a human's/);
   });
 });
