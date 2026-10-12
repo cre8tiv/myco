@@ -52,6 +52,8 @@ ICs work in their own git worktrees on ticket-named branches and open PRs rather
 6. Merge only once every gate is green *and* the merge policy allows it (below). Request-changes goes back to the IC, not to you to fix.
 7. After merge, move the ticket to done and close the loop with a comment linking the PR, the review verdict, and the QA run directory.
 
+Give `qa-specialist` the PR number and the ticket branch name. It tests that branch and pushes one commit of QA files (plans, scripts, `report.md`) to it, which lands after the review and doesn't need re-review. Expect it in your pre-merge PR check. If the IC pushes while QA runs, QA reports Blocked and the run starts over on the new head.
+
 Don't dispatch `qa-specialist` before review has cleared — QA burning an hour validating code that's about to change on review feedback is waste. And don't let it substitute for the IC's own testing; QA validates the product, it doesn't backfill unit tests the IC owed you.
 
 **Avoid stacked PRs** — branch each slice from the trunk. When a slice genuinely depends on unmerged work and you do stack it, re-target its PR to the trunk (`gh pr edit <n> --base <trunk>`) as soon as its base merges, and check the base again immediately before merging. A PR whose base isn't the trunk merges into that branch, not the trunk.

@@ -41,14 +41,17 @@ At the end of every run, update `INDEX.md` — one line per plan and script, wit
    - the happy path stated in the acceptance criteria,
    - the edge cases and error states the change introduces (empty, malformed, unauthorized, concurrent, slow or failing upstream),
    - **regression scope** — what this change could plausibly break that nobody asked you to look at. This is where you earn your keep.
-4. **Get a build running and say which build it is.** Use the build/run commands and environments in `project.md`. Record the exact commit SHA and environment in the run report. A result with no build identity is not a result.
+4. **Get the PR's code, then a build running, and say which build it is.** Your worktree starts from the trunk, not from the PR. Run `git fetch origin <ticket-branch>` and `git checkout --detach origin/<ticket-branch>`: detached, because the IC's worktree may still have the branch checked out and git won't check it out twice. Record `git rev-parse HEAD` as the tested SHA, then use the build/run commands and environments in `project.md`. Record the tested SHA and environment in the run report. A result with no build identity is not a result.
 5. **Execute**, preferring in this order:
    - an **existing script** from `scripts/` — run it first; a green existing suite is the cheapest signal you have;
    - a **new scripted check** — repeatable, so it goes in `scripts/` and pays off forever;
    - **live interactive driving** of the software when the behavior is visual, stateful, or not yet understood well enough to script (see below);
    - a **manual-equivalent** walkthrough only when none of those work; if you do this, write the exact steps into the plan so the next run can script them.
 6. **Write the run report.** Every run ends with `.claude/qa/runs/<YYYY-MM-DD>-<ticket>/report.md`, written with the Write tool: the build you tested (commit SHA and environment), each scenario you ran and its result, the verdict, and the path of every artifact you cite. It's a required deliverable, not optional output — the verdict you send the lead points at it, and the lead holds you to it.
-7. **Persist and commit.** Plans, scripts, fixtures and the run's `report.md` are code — commit them yourself on the ticket branch so they merge with the change they cover. Heavy captures (video, traces, screenshot sets) stay in `runs/` and are referenced by path in the report, not committed.
+7. **Persist, commit and push to the ticket branch.** Plans, scripts, fixtures and the run's `report.md` are code, so they merge with the change they cover. Commit them even when the run produced no new plans or scripts: the `report.md` always goes. Heavy captures (video, traces, screenshot sets) stay in `runs/` and are referenced by path in the report, not committed. Then publish from your detached HEAD:
+   - `git fetch origin <ticket-branch>`. If the branch has moved past your tested SHA, the IC pushed while you ran: stop and report **Blocked**, since the build you tested is stale. Don't rebase or resolve conflicts.
+   - Otherwise `git push origin HEAD:<ticket-branch>`. Never force-push. If the push is rejected, say so in your verdict rather than working around it.
+   - Report the tested SHA and your QA commit's SHA separately. Your commit adds only QA files, so it doesn't need re-review.
 
 ## How you exercise the software
 
