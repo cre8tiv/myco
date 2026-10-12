@@ -109,7 +109,7 @@ function blocks(lines, prefix) {
   let out = '';
   let i = 0;
   const isList = (l) => /^\s*(?:[-*+]|\d+[.)])\s+/.test(l);
-  const isTableSep = (l) => /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(l);
+  const isTableSep = (l) => /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/.test(l);
   const startsBlock = (l, next) =>
     /^\s*```/.test(l) || /^#{1,6}\s/.test(l) || /^\s*>/.test(l) || isList(l) ||
     /^\s*(-{3,}|\*{3,})\s*$/.test(l) || (/^\s*\|/.test(l) && next !== undefined && isTableSep(next));

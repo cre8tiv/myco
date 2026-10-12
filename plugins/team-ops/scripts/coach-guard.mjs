@@ -29,7 +29,7 @@ const read = () =>
     setTimeout(() => res(b), 4000);
   });
 
-const ALLOWED = [/(^|\/)\.claude\/ops\/reports\//i, /(^|\/)(tmp|temp)\//i, /\/scratchpad\//i];
+const ALLOWED = [/(^|\/)\.claude\/ops\/reports(\/|$)/i, /(^|\/)(tmp|temp)(\/|$)/i, /\/scratchpad(\/|$)/i];
 
 /** Places a redirect may point at without writing a file. */
 const SINKS = new Set(['/dev/null', '$null', 'nul']);
