@@ -128,6 +128,7 @@ skills/
   publish-review/ review pages, the design hub, and collecting comments
 scripts/
   render-review.mjs   renders a package or the hub as one page (standard library only)
+  check-package.mjs   counts the mechanical readiness checks for a package (standard library only)
 templates/
   prd-template.md
   architecture-template.md

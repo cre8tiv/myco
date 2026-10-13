@@ -156,7 +156,7 @@ Done when: open questions is empty in every document, the PRD section is renamed
 
 ## 7. Check the package
 
-Before declaring the package ready, verify it hangs together. Each of these is checkable, and you check it — don't assume:
+Before declaring the package ready, verify it hangs together. Start with `node ${CLAUDE_PLUGIN_ROOT}/scripts/check-package.mjs <packages_dir>/<slug>`: it counts what a skim gets wrong (requirements in exactly one phase, P0/P1/SEC in the traceability table, SEC controls as PRD requirements, defined actors with scenarios, open questions, a commit per codebase) and names each failure. Fix what it reports, through the relevant specialist, and run it again until it passes. The rest is judgment, so it is yours. Each of these is checkable, and you check it — don't assume:
 
 - Every PRD requirement is in exactly one phase.
 - Every P0 and P1 requirement appears in the tech design's traceability table.
