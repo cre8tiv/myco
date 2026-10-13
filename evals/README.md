@@ -39,6 +39,8 @@ plugins: ["../../../plugins/engineering-team", "../../../plugins/team-ops"]
 
 **Pair a result with a process check.** `review-catches-sql-injection` checks that the reviewer was dispatched, that the verdict is Request changes, and, with a model judge, that the finding names the injection in the right place. Prefer deterministic graders (`tool_used`, `regex`); keep `llm` graders for short answers with a concrete PASS/FAIL rubric.
 
+**Cases where an agent writes a file need `--allow-tools Write`.** `Write` is a gated tool: without the operator grant the dispatched agent can't see it, searches for it, and hands the write to another agent (`security-reviewer-finds-seeded-gaps` scored 0.86 for exactly this). Both npm scripts pass the grant. Unlike a shell grant it works on Windows, so such a case is still `portable`.
+
 **Agents are dispatched by name, not run as the session agent.** The docs don't describe running one as the session agent, so a case asks for it ("Use the engineering-team:code-reviewer agent to…"). That exercises the agent's own instructions, including its tools. It does not exercise a lead dispatching others.
 
 ## What the cases can and can't tell you
@@ -51,7 +53,7 @@ Checked by breaking things on purpose:
 
 ## What a run costs
 
-The portable suite (13 cases, 3 runs each) cost about $6 and took 8 minutes with `-j 3`. A case costs $0.20 to $1.20 for its three runs, depending on how much the model reads. `--max-cost-usd` caps a run. Use `--runs 1` while iterating, and `--ablation none`: the no-plugin baseline is meaningless for agents, which can't be dispatched without the plugin.
+The portable suite (16 cases, 3 runs each) costs about $10 and takes 10 minutes with `-j 3`. A case costs $0.20 to $1.20 for its three runs, depending on how much the model reads; `security-reviewer-finds-seeded-gaps`, which has an agent read a package and write a review, costs about $2. `--max-cost-usd` caps a run. Use `--runs 1` while iterating, and `--ablation none`: the no-plugin baseline is meaningless for agents, which can't be dispatched without the plugin.
 
 ## Running on Windows
 
