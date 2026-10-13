@@ -22,7 +22,7 @@ If setup has just run in this conversation, don't re-read the situation from scr
 
 Work out which of three situations you're in before doing anything else. If it isn't obvious, ask.
 
-**Resuming a package.** A `<packages_dir>/<slug>/` directory already exists for this work. Read its `README.md` index and every document in it — in full, since the human may have edited any of them — then tell the human in a few lines where it stands: status, open questions per document, and the next step. Continue from that step. Don't re-run steps that are done.
+**Resuming a package.** A `<packages_dir>/<slug>/` directory already exists for this work. Read its `README.md` index and every document in it — in full, since the human may have edited any of them — then tell the human in a few lines where it stands: status, open questions per document, any *Open* rows in the index's **Engineering feedback** table, and the next step. Each open row is a design problem engineering hit; handle it as a round of the decision loop (step 6), and don't set the package back to **Ready for engineering** while one is open. Continue from that step. Don't re-run steps that are done.
 
 **Adopting existing work.** A PRD, spec, RFC, one-pager or design already exists somewhere else — a markdown file, a Confluence, Notion or Linear page, a Google Doc, a `.docx` or `.pdf`, or text the human pastes. Follow *Adopting existing work* below, then continue at step 3.
 
@@ -134,7 +134,7 @@ If Claude Design refuses because access hasn't been granted, ask the human to ru
 
 ## 6. Decision loop
 
-Run rounds until no open questions remain in any document. In each round the human answers some or all of the questions, and you respond to each answer with one move:
+Run rounds until no open questions remain in any document and no row in the index's **Engineering feedback** table is *Open*. A feedback row is a question like any other: put it to the human with your recommendation, and when it's decided, record the D-entry, cascade it, and mark the row *Decided* (or *Declined* if the design stands) with the D-number in Resolution. In each round the human answers some or all of the questions, and you respond to each answer with one move:
 
 - **Accept.** Record it as given.
 - **Sharpen.** Agree, then name the consequence the human didn't mention. For example, "customer-hosted" implies an ingestion path and SSO on the UI.

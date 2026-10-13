@@ -270,3 +270,45 @@ test('the two copies of check-package.mjs are identical', () => {
   const b = readFileSync(script('engineering-team', 'check-package.mjs'), 'utf8');
   assert.equal(b.replace(/\r\n/g, '\n'), a.replace(/\r\n/g, '\n'));
 });
+
+describe('engineering feedback in the index', () => {
+  const HEAD = '\n## Engineering feedback\n\n| # | Raised | Where | Problem | Status | Resolution |\n| --- | --- | --- | --- | --- | --- |\n';
+  const withRows = (...rows) => ({ 'README.md': INDEX + HEAD + rows.join('\n') + '\n' });
+
+  test('a package with no feedback section, or "None yet", is unaffected', async (t) => {
+    assert.equal((await check(t)).status, 0);
+    assert.equal((await check(t, { 'README.md': INDEX + '\n## Engineering feedback\n\nNone yet.\n' })).status, 0);
+  });
+
+  test('an Open row fails, and says what it is about', async (t) => {
+    const r = await check(t, withRows('| 1 | 2026-10-14 CLOUD-7 | PCK-2 | The scanner API has no short-pick event | Open | |'));
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /feedback #1 is still Open: The scanner API has no short-pick event/);
+  });
+
+  test('Decided and Declined rows with a resolution pass, whatever the emphasis', async (t) => {
+    const r = await check(t, withRows(
+      '| 1 | 2026-10-14 | PCK-2 | No short-pick event | **Decided** | D-4: added an event to the tech design |',
+      '| 2 | 2026-10-15 | ADR-1 | Queue is slow | Declined | D-5: accepted risk |',
+    ));
+    assert.equal(r.status, 0, r.stdout);
+  });
+
+  test('a settled row with no resolution, or a status that is not one of the three, fails', async (t) => {
+    const r = await check(t, withRows('| 1 | d | PCK-2 | x | Decided | |', '| 2 | d | PCK-1 | y | In progress | D-3 |'));
+    assert.match(r.stdout, /feedback #1 is decided but has no Resolution/);
+    assert.match(r.stdout, /feedback #2: status "in progress" is not Open, Decided or Declined/);
+  });
+
+  test('an unfilled template row is ignored, and --ready is blocked by an Open one', async (t) => {
+    assert.equal((await check(t, withRows('| <n> | <date> | <ID> | <problem> | <Open> | <D-n> |'))).status, 0);
+    const r = await check(t, withRows('| 1 | d | PCK-2 | x | Open | |'), ['--ready']);
+    assert.equal(r.status, 1);
+  });
+});
+
+test('the package index template has the feedback section the check reads', () => {
+  const tpl = readFileSync(join(script('design-team', 'check-package.mjs'), '..', '..', 'templates', 'package-index.md'), 'utf8');
+  assert.match(tpl, /^## Engineering feedback$/m);
+  assert.match(tpl, /Table with columns `# \| Raised \| Where \| Problem \| Status \| Resolution`/);
+});

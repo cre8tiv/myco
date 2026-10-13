@@ -83,6 +83,18 @@ claude --agent engineering-team:tech-lead
 > Implement phase 1 of <packages_dir>/<slug>/
 ```
 
+## Engineering feedback
+
+Written by the engineering tech lead when implementation shows part of the design is wrong, missing or impossible; triaged by the product lead as a decision round. Table with columns `# | Raised | Where | Problem | Status | Resolution`. One row per problem; never delete a row.
+
+- **Raised:** the date, and the ticket or slice that hit it.
+- **Where:** the requirement, ADR, `SEC-n` control or UX state the problem is about, by ID.
+- **Problem:** what implementation found, with the evidence (the code, the contract, the error), so the product lead can decide without the engineering context.
+- **Status:** *Open* until the product lead decides, then *Decided* (the design changed) or *Declined* (the design stands). An *Open* row blocks **Ready for engineering**.
+- **Resolution:** the D-decision that settled it, and what it changed.
+
+Write "None yet" when there are no rows.
+
 ## Change log
 
 One line per update: date, what changed, and the decisions applied.
