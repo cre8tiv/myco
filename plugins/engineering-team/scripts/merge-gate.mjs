@@ -8,8 +8,12 @@
 // Keyed on `agent_type`, so a human working in a plain session is unaffected — the
 // gate is on autonomous merges, not on the person who asked for one.
 //
+// When the policy is `autonomous`, a PR merge is still blocked unless the PR's branch
+// carries a QA run report with a Pass verdict for the code being merged (see qaCheck).
+//
 // Exit 2 blocks the call and returns stderr to the calling agent. Any internal
 // error exits 0 — a broken gate must never block legitimate work.
+import { execFileSync } from 'node:child_process';
 import { profileKey } from './profile.mjs';
 
 const read = () =>
@@ -106,29 +110,91 @@ function mergeAttempt(cmd, trunk, depth = 0) {
   for (const { raw: rawCmd, blank: blankCmd } of commands(cmd)) {
     const raw = rawCmd.replace(PREFIX, '');
     const blank = blankCmd.replace(PREFIX, '');
-    if (/^gh(\.exe)?\s+pr\s+merge\b/i.test(blank)) return 'gh pr merge';
+    if (/^gh(\.exe)?\s+pr\s+merge\b/i.test(blank)) return { what: 'gh pr merge', pr: prArgs(raw) };
     // The REST endpoint and the GraphQL mutation both complete a PR without `gh pr merge`.
     if (/^gh(\.exe)?\s+api\b/i.test(blank) && /(\/pulls\/\d+\/merge\b|\bmergePullRequest\b)/i.test(raw))
-      return 'gh api pull request merge';
+      return { what: 'gh api pull request merge', pr: apiPrArgs(raw) };
     if (/^az\s+repos\s+pr\s+(update|complete|set-auto-complete)\b/i.test(blank) && /\b(completed|complete|--complete|--auto-complete)\b/i.test(raw))
-      return 'az repos pr complete';
-    if (GIT_PUSH.test(blank) && pushesToTrunk(raw, trunk)) return `git push to ${trunk}`;
+      return { what: 'az repos pr complete', pr: null };
+    if (GIT_PUSH.test(blank) && pushesToTrunk(raw, trunk)) return { what: `git push to ${trunk}`, pr: null };
     // `bash -c "gh pr merge 1"`: the quoted text is the command here.
     const inner = depth < 3 && raw.match(SHELL_C);
     if (inner) {
-      const what = mergeAttempt(inner[2], trunk, depth + 1);
-      if (what) return what;
+      const found = mergeAttempt(inner[2], trunk, depth + 1);
+      if (found) return found;
     }
   }
+  return null;
+}
+
+// `gh pr merge` flags that take a value, so the value isn't mistaken for the PR selector.
+const VALUE_FLAGS = new Set(['-t', '--subject', '-b', '--body', '-F', '--body-file', '-A', '--author-email', '--match-head-commit']);
+const unquote = (t) => (t || '').replace(/^["']+|["']+$/g, '');
+
+// The arguments that identify the PR to `gh pr view`: its number, branch or URL (none
+// means the current branch), and --repo when given.
+function prArgs(raw) {
+  const tokens = raw.split(/\s+/);
+  const out = [];
+  for (let i = tokens.findIndex((t) => /^merge$/i.test(t)) + 1; i < tokens.length; i++) {
+    const tok = unquote(tokens[i]);
+    if (tok === '-R' || tok === '--repo') out.push('--repo', unquote(tokens[++i]));
+    else if (/^--repo=/.test(tok)) out.push(tok);
+    else if (VALUE_FLAGS.has(tok)) i++;
+    else if (!tok.startsWith('-') && !out.length) out.push(tok);
+  }
+  return out;
+}
+
+// `gh api repos/o/r/pulls/42/merge`: the number and the repo are in the path.
+function apiPrArgs(raw) {
+  const m = raw.match(/repos\/([\w.-]+\/[\w.-]+)\/pulls\/(\d+)\/merge/i);
+  return m ? [m[2], '--repo', m[1]] : null;
+}
+
+// ---- The QA gate (autonomous only) ----
+
+const run = (cmd, args, cwd) => execFileSync(cmd, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 20000 });
+const git = (cwd, ...args) => run('git', args, cwd);
+// MERGE_GATE_GH names a script to run with node in place of `gh`; the tests use it.
+const gh = (cwd, args) => (process.env.MERGE_GATE_GH ? run(process.execPath, [process.env.MERGE_GATE_GH, ...args], cwd) : run('gh', args, cwd));
+
+// Why this PR may not merge yet, or null when its QA report is a Pass for the code being
+// merged. The report is the latest .claude/qa/runs/*/report.md on the PR's branch, with
+// "Verdict:" and "Tested SHA:" lines. Anything that stops the check from running at all
+// (no gh, offline, unknown branch) throws, and the caller lets the merge through: a
+// broken gate must never block legitimate work.
+function qaCheck(cwd, pr) {
+  const branch = JSON.parse(gh(cwd, ['pr', 'view', ...pr, '--json', 'headRefName'])).headRefName;
+  if (!branch) throw new Error('no head branch');
+  try { git(cwd, 'fetch', '-q', 'origin', branch); } catch { /* use what is already fetched */ }
+  const ref = `origin/${branch}`;
+  git(cwd, 'rev-parse', '--verify', '-q', ref);
+  const reports = git(cwd, 'ls-tree', '-r', '--name-only', ref, '--', '.claude/qa/runs').split(/\r?\n/).filter((f) => /\/report\.md$/.test(f));
+  if (!reports.length) return `${branch} has no QA run report under .claude/qa/runs/`;
+  const latest = reports.sort().pop();
+  const report = git(cwd, 'show', `${ref}:${latest}`);
+  const verdict = (report.match(/^\W*Verdict\W*:\W*([A-Za-z][^\r\n]*)/im) || [])[1]?.trim();
+  if (!verdict || !/^pass\b/i.test(verdict)) return `${latest} has verdict "${verdict || 'none recorded'}", not Pass`;
+  const sha = (report.match(/^\W*Tested SHA\W*:\W*([0-9a-f]{7,40})/im) || [])[1];
+  if (!sha) return `${latest} records no "Tested SHA:", so it can't be tied to the code being merged`;
+  let changed;
+  try {
+    changed = git(cwd, 'diff', '--name-only', sha, ref).split(/\r?\n/).filter(Boolean);
+  } catch {
+    return `${latest}'s tested SHA ${sha} is not in ${branch}'s history`;
+  }
+  const code = changed.filter((f) => !f.startsWith('.claude/qa/'));
+  if (code.length) return `${branch} changed after QA tested ${sha.slice(0, 7)} (${code.slice(0, 3).join(', ')}${code.length > 3 ? ', ...' : ''}); QA must re-run`;
   return null;
 }
 
 // A merge or completion tool exposed by an MCP server (GitHub, Azure DevOps, ...).
 function mcpMergeAttempt(toolName, input) {
   if (!/^mcp__/i.test(toolName)) return null;
-  if (/merge/i.test(toolName)) return toolName;
+  if (/merge/i.test(toolName)) return { what: toolName, pr: null };
   if (/pull_?request/i.test(toolName) && /^(completed|complete)$/i.test(String(input?.status || '')))
-    return `${toolName} (status: completed)`;
+    return { what: `${toolName} (status: completed)`, pr: null };
   return null;
 }
 
@@ -136,11 +202,24 @@ try {
   const e = JSON.parse((await read()) || '{}');
   if (e.agent_type) {
     const policy = (profileKey(e.cwd, 'merge_policy', 'human-approval') || '').toLowerCase();
-    if (policy !== 'autonomous') {
-      const trunk = profileKey(e.cwd, 'trunk_branch', 'main') || 'main';
-      const what = SHELL_TOOLS.has(e.tool_name)
-        ? mergeAttempt(e.tool_input?.command || '', trunk)
-        : mcpMergeAttempt(e.tool_name || '', e.tool_input);
+    const trunk = profileKey(e.cwd, 'trunk_branch', 'main') || 'main';
+    const found = SHELL_TOOLS.has(e.tool_name)
+      ? mergeAttempt(e.tool_input?.command || '', trunk)
+      : mcpMergeAttempt(e.tool_name || '', e.tool_input);
+    if (policy === 'autonomous') {
+      // Autonomous means no human approval, not no QA. Only a merge that names a PR can be
+      // checked; a push to the trunk or another tool's merge has no branch to look at.
+      let why = null;
+      try { why = found?.pr ? qaCheck(e.cwd, found.pr) : null; } catch { /* could not check: let it through */ }
+      if (why) {
+        console.error(
+          `Blocked: merge_policy is "autonomous", but this PR has no passing QA run (${why}). ` +
+            'Dispatch qa-specialist against the PR branch, wait for a Pass, then merge.',
+        );
+        process.exit(2);
+      }
+    } else {
+      const what = found?.what;
       if (what) {
         console.error(
           `Blocked: this project's merge_policy is "${policy}", so merging is a human's ` +
