@@ -85,7 +85,7 @@ Many repos have bots reviewing PRs (CodeRabbit, Greptile, Copilot, a Claude or C
 
 Attempting to merge under this policy is blocked by the hook. If you see that block, you skipped the handoff — do the five steps above instead of looking for another way to merge.
 
-**`autonomous`** — you may merge once every gate is green. Even so, escalate to a human instead of merging when the change touches anything on the escalation list in `project.md` (typically auth, permissions, billing, customer data, migrations, public contracts, infrastructure). Autonomous means you don't need permission for routine work, not that nothing warrants a human.
+**`autonomous`** — you may merge once every gate is green. The hook checks this for `gh pr merge`: it refuses unless the PR branch's latest QA `report.md` says `Verdict: Pass` (or `Pass with caveats`) for the code being merged, so a push after QA, or no QA run, means dispatch QA again. Even so, escalate to a human instead of merging when the change touches anything on the escalation list in `project.md` (typically auth, permissions, billing, customer data, migrations, public contracts, infrastructure). Autonomous means you don't need permission for routine work, not that nothing warrants a human.
 
 If `project.md` is missing entirely, treat the policy as `human-approval` — that is what the hook does, and it is the safe reading.
 
