@@ -251,6 +251,21 @@ const secIds = new Set();
   record('Every codebase the design was grounded in records its commit', problems);
 }
 
+// ---- Engineering feedback
+{
+  const problems = [];
+  for (const r of tables(section(index, /^engineering feedback/i)).flat()) {
+    const cells = Object.values(r).map((c) => c.trim());
+    if (cells.every((c) => BLANK.test(c) || /^<.*>$/.test(c))) continue;
+    const n = cells[0] || '?';
+    const status = col(r, 'status').replace(/[*_]/g, '').trim().toLowerCase();
+    if (!/^(open|decided|declined)$/.test(status)) problems.push(`feedback #${n}: status "${status || 'blank'}" is not Open, Decided or Declined`);
+    else if (status === 'open') problems.push(`feedback #${n} is still Open: ${col(r, 'problem').slice(0, 80)}`);
+    else if (BLANK.test(col(r, 'resolution'))) problems.push(`feedback #${n} is ${status} but has no Resolution`);
+  }
+  record('No engineering feedback is still open', problems);
+}
+
 // ---- ADRs referenced (advice, not a failure: only ADRs that constrain implementation must be)
 const advice = [];
 {

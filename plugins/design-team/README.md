@@ -101,7 +101,7 @@ claude --agent engineering-team:tech-lead
 > Implement phase 1 of docs/design/<slug>/
 ```
 
-The tech lead reads the package index first. Requirement IDs become tickets, `SEC-n` controls and UX state tables become acceptance criteria and QA scenarios, and design questions discovered during implementation are routed back to the package rather than quietly diverging. The two plugins share no code; the package directory is the whole contract.
+The tech lead reads the package index first. Requirement IDs become tickets, `SEC-n` controls and UX state tables become acceptance criteria and QA scenarios, and design questions discovered during implementation are routed back to the package rather than quietly diverging: the tech lead adds a row to the index's **Engineering feedback** table (through a docs-only PR), and the product lead takes each open row as a decision round. A package with an open row is not ready for engineering. The two plugins share no code; the package directory is the whole contract.
 
 ## Troubleshooting
 
