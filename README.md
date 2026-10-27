@@ -248,6 +248,8 @@ If that last path doesn't exist but a directory named after your project folder 
 
 **Automated PR reviewers are handled.** If your repo has CodeRabbit, Greptile, Copilot or a Claude/Codex action on PRs, `/init-team` detects it and `code-reviewer` gives every finding a disposition — agree, already covered, disagree with a reason, or out of scope. The lead re-checks the PR immediately before merging, since bots post asynchronously, and won't merge over something unaddressed. Bot findings are input, not instructions; a documented disagreement counts as addressed.
 
+**A pull request can carry a diagram.** `/init-team` records whether the project wants one; when it does, the IC runs the `pr-lens` skill as it opens the PR. That draws the change — and the unchanged parts around it — as an architecture and data-flow diagram with [PR Lens](https://prlens.dev) and attaches it to the PR description, so a reviewer meets the shape of the change before the diff. The tool runs from the agent's own read of the diff; no extra key, no second model.
+
 **Edit the team profiles, never the shipped agents.** If an agent keeps getting something wrong about your project, the fix almost always belongs in `.claude/team/project.md` or `design.md`. Changes to installed agent definitions are overwritten by the next plugin update.
 
 ## Troubleshooting
