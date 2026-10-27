@@ -20,6 +20,7 @@ Work out as much as possible from the repo, and note your confidence in each:
 - **Existing tracker tooling** — which MCP servers are actually available in this session. **Use the real tool prefix you can see** (e.g. `mcp__atlassian__*`), never a guessed one; a wrong prefix is the single most common cause of an agent silently lacking a tool.
 - **Automated PR reviewers** — the highest-value detection here, because the team currently has no way to know about them. Check both:
   - *Config in the repo:* `.coderabbit.yaml`, a Greptile config, `.github/copilot-instructions.md`, and any workflow under `.github/workflows/` or `azure-pipelines.yml` that invokes a review action (CodeRabbit, Greptile, Codex, `claude-code-action`, Copilot review).
+  - *PR Lens diagrams:* a `.github/pr-lens.yml` file, or the `coldtea-pr-lens` app showing up in recent PR comments. This one is a comprehension aid, not a reviewer: record it as the `pr_lens` key rather than in the reviewer table.
   - *Recent PRs, which is the stronger signal* — a bot installed as a GitHub App leaves no trace in the repo. List a few recently merged PRs and look at who reviewed or commented; authors whose login ends in `[bot]` or which are marked as apps are your answer. Note roughly how long after PR open each one posted, and whether its approval appears as a required check.
 - **Existing conventions** — a `CLAUDE.md`, `AGENTS.md`, or `CONTRIBUTING.md` already in the repo. Harvest it rather than re-asking the user; contradicting an existing CLAUDE.md is worse than being silent.
 - **Prior profile** — if `.claude/team/project.md` already exists, read it and treat this as a refresh: confirm what's still true, update what isn't, and don't discard the prose sections a human has written.
@@ -76,6 +77,7 @@ Copy `${CLAUDE_PLUGIN_ROOT}/templates/team/project.md` to `.claude/team/project.
   - `max_parallel_agents` — read by the tech lead as a hard cap on concurrently running agents. Missing means 3.
   - `merge_policy` — **enforced.** Anything other than `autonomous` blocks agents from completing a merge. Missing means gated, which is the safe failure.
   - `trunk_branch` — which branch the merge gate protects. Keep it in sync with the prose section; a wrong value means the gate protects the wrong branch.
+  - `pr_lens` — whether PRs from this project carry a PR Lens diagram (`skill`) or not (`none`). Not hook-read; the IC's PR step and the lead's pre-merge check read it. Default `none`, and set it from what you detected or asked, not from a guess.
 - **The profile must be committed.** Agents read it from inside git worktrees by walking up from the working directory, so an uncommitted profile means each IC worktree falls back to defaults — splitting the event stream and, worse, leaving the merge gate reading a different policy than you set. Tell the user to commit it.
 - **Prefer honest gaps over invention.** "No preview environments" is useful. A plausible-looking fabricated command is a trap.
 

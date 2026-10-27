@@ -10,7 +10,7 @@ A delivery agent team with two quality gates and an enforced human merge gate.
 | `code-reviewer` | Independent review of the diff | — | No (enforced) |
 | `qa-specialist` | Test plans + execution against a running build | git worktree | Tests only |
 
-Plus one skill, `/init-team`, which profiles the host project and writes the config the agents read.
+Plus two skills: `/init-team`, which profiles the host project and writes the config the agents read, and `pr-lens`, which draws a pull request as architecture and data-flow diagrams with [PR Lens](https://prlens.dev) and attaches them to the PR description — opt-in per project.
 
 Depends on [`team-ops`](../team-ops), installed automatically, which captures how the team works and provides `agent-coach` to analyze it.
 
@@ -70,6 +70,7 @@ The gate covers `gh`, `az repos` and direct trunk pushes. It's a guardrail again
 ```
 agents/                  five definitions, generic
 skills/init-team/        the setup interview
+skills/pr-lens/          a PR diagram in the description (opt-in per project)
 hooks/hooks.json         merge-gate wiring, via ${CLAUDE_PLUGIN_ROOT}
 scripts/
   merge-gate.mjs         merge policy enforcement

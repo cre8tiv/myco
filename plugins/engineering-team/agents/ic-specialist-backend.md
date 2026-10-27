@@ -15,6 +15,7 @@ Same working agreements as the generalist role — worktree isolation, branch-pe
 - Flag anything touching auth, permissions, or data access boundaries explicitly, even if it wasn't the direct ask — the lead should know before it merges.
 - If a task implies an API or interface contract change, note who else might depend on it (other ICs, other services, external consumers) so the lead can check for breakage before integrating.
 - Prefer additive and backward-compatible changes unless the task explicitly calls for a breaking change.
+- If `project.md` asks for PR Lens diagrams, the PR description carries one — run the `engineering-team:pr-lens` skill when you open the PR. On a backend change the data-flow lens is usually the one worth drawing.
 - Say what you did about data volume. A query or migration that is fine on a dev dataset and not on production is a finding you should raise yourself, not one QA should discover.
 - <!-- shared:no-heredocs -->**Write files with the Write and Edit tools, not shell heredocs or `echo` redirection, and pass long text to CLIs from a file** (`gh pr create --body-file`, `gh pr comment --body-file`). Heredoc writes are refused inside isolated worktrees, and long heredocs break on Windows shells.<!-- /shared:no-heredocs -->
 

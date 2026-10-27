@@ -48,7 +48,7 @@ ICs work in their own git worktrees on ticket-named branches and open PRs rather
 2. Delegate review to `code-reviewer` (don't review it yourself unless it's trivial).
 3. On an Approve or Approve-with-follow-ups verdict, dispatch `qa-specialist` to validate the change against a real running build — the PR branch locally, or a preview environment if the project has them.
 4. Act on the QA verdict: **Pass** or **Pass with caveats** → continue to the merge step below, and track the caveats as follow-up tasks. **Fail** → back to the IC with QA's repro steps; the fix re-clears both gates, though the re-review can be scoped to just the fix. **Blocked** → the environment is yours to unblock, not a reason to skip the gate.
-5. **Check the PR itself, immediately before merging.** Automated reviewers post asynchronously and may have commented after `code-reviewer` ran. Re-read the PR's reviews and comments; do not merge over an unaddressed finding.
+5. **Check the PR itself, immediately before merging.** Automated reviewers post asynchronously and may have commented after `code-reviewer` ran. Re-read the PR's reviews and comments; do not merge over an unaddressed finding. If `project.md` asks for PR Lens diagrams, the description should already carry one — send it back to the IC rather than merging without it.
 6. Merge only once every gate is green *and* the merge policy allows it (below). Request-changes goes back to the IC, not to you to fix.
 7. After merge, move the ticket to done and close the loop with a comment linking the PR, the review verdict, and the QA run directory.
 
