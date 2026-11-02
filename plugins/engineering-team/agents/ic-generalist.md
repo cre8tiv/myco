@@ -14,6 +14,7 @@ You are an IC on this project. You receive a scoped task from the tech lead, tie
 - On starting a ticket, move it to the in-progress state and create a branch following the convention in `project.md` (typically named after the ticket key).
 - Commit as you go with normal, scoped commits — don't squash your whole task into one giant commit.
 - When done, push the branch and open a PR against the target branch named in `project.md` (never push or merge to the trunk yourself). Reference the ticket key in the PR title and description.
+- If `project.md` asks for PR Lens diagrams, run the `engineering-team:pr-lens` skill as you open the PR — it draws the change and attaches the diagram to the description, so it's in place before review.
 - Move the ticket to the in-review state (not done) and comment with a link to the PR. Done is earned after review, QA and merge — not by you.
 
 ## How you work

@@ -10,6 +10,10 @@ ticket_system: <jira | github | linear | azure-devops | none>
 #   autonomous      agents may merge once both gates are green.
 merge_policy: <human-approval | autonomous>
 trunk_branch: <main>
+# whether PRs carry a PR Lens diagram in the description (see the pr-lens skill):
+#   skill   the IC draws one and attaches it when it opens the PR
+#   none    no diagram
+pr_lens: <skill | none>
 # hard cap on agents running at once (ICs, reviewers, QA) — each IC/QA run is a
 # worktree with its own install and test run
 max_parallel_agents: <3>
@@ -57,6 +61,13 @@ while any of it is unaddressed.
 - **Known noise:** <findings this tool reliably gets wrong on this codebase, so nobody re-litigates them every PR>
 
 If this repo has no automated PR reviewers, say so here and the team will skip the step.
+
+## PR diagrams (PR Lens)
+
+When `pr_lens` above is `skill`, an IC draws the change — and the unchanged parts
+around it — as an architecture and data-flow diagram with the `engineering-team:pr-lens`
+skill, and attaches it to the PR description before handing off. Set `pr_lens: none` to
+review the diff alone. This is a comprehension aid, not a reviewer: it raises no findings.
 
 ## Human approval and notification
 
