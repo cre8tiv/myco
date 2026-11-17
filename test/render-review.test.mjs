@@ -275,6 +275,24 @@ describe('links', () => {
   });
 });
 
+describe('the prototype link', () => {
+  test('the page header links the index\'s Prototype row, and leaves it out when there is none', async (t) => {
+    const sb = sandbox(t);
+    const withProto = README.replace('| **Review page** |', '| **Prototype** | [canvas](https://claude.ai/artifact/canvas1) |\n| **Review page** |');
+    const html = await render(sb, pkg(sb, { 'README.md': withProto }));
+    assert.match(html, /<div class="facts">.*<a href="https:\/\/claude\.ai\/artifact\/canvas1" target="_blank" rel="noopener">Open prototype<\/a>/);
+    const sb2 = sandbox(t);
+    assert.doesNotMatch(await render(sb2, pkg(sb2)), /Open prototype/);
+  });
+
+  test('a Prototype row that is not a URL never becomes a link', async (t) => {
+    const sb = sandbox(t);
+    const bad = README.replace('| **Review page** |', '| **Prototype** | javascript:alert(1) "><b>x</b> |\n| **Review page** |');
+    const html = await render(sb, pkg(sb, { 'README.md': bad }));
+    assert.doesNotMatch(html, /Open prototype|href="javascript:/i);
+  });
+});
+
 describe('the design hub', () => {
   const hubPackage = (sb, slug, readme) => {
     const dir = join(sb.root, 'docs', 'design', slug);
@@ -303,6 +321,16 @@ describe('the design hub', () => {
     assert.equal((html.match(/Not published/g) || []).length, 1);
     assert.match(html, /<b>3<\/b> packages/);
     assert.match(html, /<h1>Acme designs<\/h1>/);
+  });
+
+  test('links each package\'s primary prototype from its Prototype row', async (t) => {
+    const sb = sandbox(t);
+    hubPackage(sb, 'with', `${header('With canvas', 'In review', '2026-10-09', '[open](https://claude.ai/artifact/rev)')}\n| **Prototype** | [canvas](https://claude.ai/artifact/canvas1) |`);
+    hubPackage(sb, 'without', header('No prototype', 'Draft', '2026-10-01', '—'));
+    const html = await hub(sb);
+    assert.match(html, /<th>Prototype<\/th>/);
+    assert.match(html, /<a href="https:\/\/claude\.ai\/artifact\/canvas1" target="_blank" rel="noopener">Open prototype<\/a>/);
+    assert.equal((html.match(/Open prototype/g) || []).length, 1);
   });
 
   test('ignores directories that are not packages, and says so when there are none', async (t) => {

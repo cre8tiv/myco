@@ -11,7 +11,7 @@ A design package is written for engineering: precise, cross-referenced, and long
 
 ## Before you start
 
-- **You need the `Artifact` tool.** It exists only in an interactive session signed in to claude.ai. In a headless run (`claude -p`) or as a subagent you won't have it: render the page (step 3) into your scratchpad or the system temp directory, say where it is, and tell the human that publishing needs an interactive session. Don't claim you published anything.
+- **You need the `Artifact` tool.** It exists only in an interactive session signed in to claude.ai. In a headless run (`claude -p`) or as a subagent you won't have it: render the page (step 4) into your scratchpad or the system temp directory, say where it is, and tell the human that publishing needs an interactive session. Don't claim you published anything.
 - **Read `.claude/team/design.md`.** `review_pages` says whether this project publishes review pages (`artifact`) or not (`none`); `product_name` goes in page titles; `review_hub` is the hub's link, once it exists.
 - **Read the package's `README.md`.** Its header table's **Review page** row holds the page's link if it has been published before, and its **Review** section records past rounds.
 
@@ -29,9 +29,11 @@ Artifact links are `claude.ai/artifact/<id>`; the id can't be chosen. What makes
 
 1. **Re-read every document in the package**, in full. The human may have edited any of them since you last did.
 
-2. **Write or update `review.md`** in the package from `${CLAUDE_PLUGIN_ROOT}/templates/review-summary.md`. This is the Overview reviewers read first. Write it for someone who hasn't opened the package, link to the documents rather than restating them, and make *What we want feedback on* specific — questions naming who is best placed to answer, not "thoughts?". If `review.md` exists, update it: a human may have edited it. If the package hasn't passed its readiness checks, say plainly at the top of the Overview that this is a draft review and what isn't settled yet.
+2. **Check the prototypes are linked.** If the package has `ux.md` and `design.md`'s `ux_prototypes` isn't `wireframes`, every row in `ux.md`'s Prototypes table needs a claude.ai link. A reviewer can't open a `ux/` path from the page, so publish any HTML prototype still marked "not published" with the `Artifact` tool first, then have the ux-designer record the link, as *Prototypes* in your agent definition describes — `ux.md` is the ux-designer's document, so don't edit it yourself. A row marked stale means the prototype lags `ux.md`: get it updated at the same link, or say so at the top of the Overview. Make sure the package index's **Prototype** row has the same link as the first row of that table; the page header and the hub link it from there.
 
-3. **Commit, then render.** Commit the package (by path, never `git add -A`) so the page can name the commit it was rendered from, then:
+3. **Write or update `review.md`** in the package from `${CLAUDE_PLUGIN_ROOT}/templates/review-summary.md`. This is the Overview reviewers read first. Write it for someone who hasn't opened the package, link to the documents rather than restating them, and make *What we want feedback on* specific — questions naming who is best placed to answer, not "thoughts?". If `review.md` exists, update it: a human may have edited it. If the package hasn't passed its readiness checks, say plainly at the top of the Overview that this is a draft review and what isn't settled yet. Link the prototype in *How it works*, as the template says.
+
+4. **Commit, then render.** Commit the package (by path, never `git add -A`) so the page can name the commit it was rendered from, then:
 
    ```
    node "${CLAUDE_PLUGIN_ROOT}/scripts/render-review.mjs" package --dir <packages_dir>/<slug> --title "<title>" --round <n> --out <scratchpad>/<slug>-review.html
@@ -39,17 +41,17 @@ Artifact links are `claude.ai/artifact/<id>`; the id can't be chosen. What makes
 
    `<scratchpad>` is your session's scratchpad directory, or the system temp directory if you have none. Render there, not into the repository: the HTML is derived from the markdown, and a committed copy would drift from it. The script reports the file's size; it must stay under 16 MB.
 
-4. **Publish.**
+5. **Publish.**
    - **First time:** publish the file with the `Artifact` tool, with the title convention, a description, and `icon: "document"`.
    - **Later rounds:** publish to the recorded link (`url`). If you didn't publish it earlier in this conversation, read it first (`Artifact` with `action: "read"`); a publish to an artifact this conversation hasn't read is refused. Omit `icon` so it keeps the one it has.
 
-5. **Record it.** In the package index: the link in the header table's **Review page** row, and a new row in the **Review** section's rounds table. Commit.
+6. **Record it.** In the package index: the link in the header table's **Review page** row, and a new row in the **Review** section's rounds table. Commit.
 
-6. **Update the hub** (below).
+7. **Update the hub** (below).
 
-7. **Tell the human:**
-   - the page link, and the hub link;
-   - that **the page is private until they share it** from claude.ai, and who they might share it with — the sign-off names in `design.md`, and anyone the *What we want feedback on* questions name;
+8. **Tell the human:**
+   - the page link, the hub link, and each prototype link;
+   - that **the page and each prototype are private until they share them** from claude.ai — sharing the review page doesn't share the Claude Design canvas it links to, so a reviewer who clicks through hits an access wall — and who they might share them with: the sign-off names in `design.md`, and anyone the *What we want feedback on* questions name;
    - that reviewers comment directly on the page, and that **Send to Claude** on a thread lets you reply in it;
    - to tell you when the feedback is in. Don't rely on being woken by a comment.
 
@@ -57,7 +59,7 @@ Artifact links are `claude.ai/artifact/<id>`; the id can't be chosen. What makes
 
 ## Update the hub
 
-The hub lists every package in `packages_dir` with its status, owner, last update and review link — one link for the whole project's design work.
+The hub lists every package in `packages_dir` with its status, owner, last update, review link and primary prototype link (from each index's **Prototype** row) — one link for the whole project's design work.
 
 ```
 node "${CLAUDE_PLUGIN_ROOT}/scripts/render-review.mjs" hub --dir <packages_dir> --title "<product_name> design packages" --out <scratchpad>/design-hub.html
@@ -82,7 +84,7 @@ When the human says feedback is in:
 
 4. **Run the round** through the product lead's decision loop: the human decides, every decision is logged and cascades through every document as usual, and specialists are continued for their documents.
 
-5. **Republish** to the same link, with the next round number, and update the hub.
+5. **Republish** to the same link, with the next round number, and update the hub. Before you do, check that every prototype the round changed was updated at its recorded link and its *Synced to* bumped (step 2 of *Publish a package*).
 
 6. **Close the loop on each thread.**
    - **Sent to Claude:** reply briefly with what changed and the D-number, then resolve it. Leave it open only while a conversation with the commenter is still going.

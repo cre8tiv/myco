@@ -46,12 +46,23 @@ Use the **prototype mode** in `design.md`, adapting to what is actually availabl
 3. **HTML prototype** — otherwise, write each prototype as a single self-contained HTML file under `ux/` in the package: inline CSS and JS, no external assets, real copy, and every state from your states table reachable (a state switcher is fine). Apply the canonical design system's tokens — colors, type, spacing — so it looks like the product rather than a generic page. It must open from disk. If you have the `Artifact` tool, publish it as a page as well.
 4. **No Artifact tool** — write the HTML prototypes under `ux/` and tell the product-lead which ones are ready to publish. It runs in the human's session and can publish them there.
 
-Link every prototype from `ux.md`, next to the surface it shows. A published prototype is private until the human shares it; say so when you report the link.
+### Link every prototype into `ux.md`
+
+A prototype nobody can find from the package doesn't exist for engineering, QA or reviewers. As soon as a canvas or prototype exists:
+
+- **Record it in `ux.md`'s Prototypes table**: kind, the claude.ai link the `design` skill or `Artifact` tool returned (use it exactly as given), the surfaces and states it shows, and the round and D-decision it's synced to. The first row is the primary prototype; the product-lead copies its link into the package index.
+- **Link each surface to it**: the inventory's *Prototype* column points at the artboard or prototype that shows that surface.
+- **An unpublished HTML prototype** is listed as "not published — `ux/<file>.html`" until it has a link. Never leave a row without one or the other.
+
+**Keep it in step with `ux.md`.** When a decision changes a surface, update the existing canvas or page at its recorded link — in Claude Design, edit the same canvas; with the `Artifact` tool, publish to the recorded `url` — and bump *Synced to*. Don't create a second canvas for the same surfaces: a link a reviewer was given in round 1 has to show round 3. If you can't reach the prototype this time, write "stale — synced to round n" in that row's *Synced to* cell and tell the product-lead.
+
+A published prototype is private until the human shares it; say so when you report the link.
 
 ## What you return to the product-lead
 
 - **What you wrote** — flows, surfaces, and prototypes by name, with links or paths.
-- **Prototypes awaiting publishing**, if you couldn't publish them yourself.
+- **Prototype links** — every claude.ai link, which one is primary, and the round it's synced to, so the product-lead can put the primary one in the package index.
+- **Prototypes awaiting publishing or update**, if you couldn't publish or sync them yourself.
 - **Missing requirements** — states and behaviors the PRD doesn't cover (what happens when the list is empty, when the user lacks permission, when the upstream is slow), stated as requirement text with a suggested area and priority. This is usually the most valuable thing you return.
 - **Open questions** — phrased as decisions with your recommendation. Conflicts between an existing design file, the code, and the PRD go here.
 - **Interactions the architecture may not support**, for the architect via the product-lead.

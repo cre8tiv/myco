@@ -307,6 +307,79 @@ describe('engineering feedback in the index', () => {
   });
 });
 
+describe('UX prototypes', () => {
+  const UX = (rows) => `| | |\n| --- | --- |\n| **Status** | All open questions resolved |\n\n## 4. Prototypes\n\n| Prototype | Kind | Link | Shows | Synced to |\n| --- | --- | --- | --- | --- |\n${rows.join('\n')}\n\n## 5. Flows\n\nNone.\n`;
+  const CANVAS = '| Picker flow | Claude Design canvas | [canvas](https://claude.ai/artifact/abc) | S-1, S-2 | round 2, D-1 |';
+
+  test('every prototype with a published link passes; an unfilled template row is ignored', async (t) => {
+    const r = await check(t, { 'ux.md': UX([CANVAS, '| <name> | <kind> | <link> | <S-n> | <round> |', '|  |  |  |  |  |']) });
+    assert.equal(r.status, 0, r.stdout);
+    assert.match(r.stdout, /PASS\s+Every UX prototype is published and linked from ux\.md/);
+  });
+
+  test('a prototype with only a ux/ path, or none, is named', async (t) => {
+    const r = await check(t, { 'ux.md': UX([CANVAS, '| Settings | HTML prototype | not published — `ux/settings.html` | S-3 | round 2 |', '| Empty | HTML prototype | | S-4 | round 1 |']) });
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /Settings: no published claude\.ai link \(got "not published — `ux\/settings\.html`"\)/);
+    assert.match(r.stdout, /Empty: no published claude\.ai link \(got "blank"\)/);
+    assert.doesNotMatch(r.stdout, /Picker flow:/);
+  });
+
+  test('a prototype marked stale fails', async (t) => {
+    const r = await check(t, { 'ux.md': UX(['| Picker flow | Claude Design canvas | https://claude.ai/artifact/abc | S-1 | stale — synced to round 1 |']) });
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /Picker flow: marked stale/);
+  });
+
+  test('"stale" in any cell fails, not just Synced to', async (t) => {
+    const r = await check(t, { 'ux.md': UX(['| Picker flow | Claude Design canvas | https://claude.ai/artifact/abc (stale) | S-1 | round 1, D-3 |']) });
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /Picker flow: marked stale \(https:\/\/claude\.ai\/artifact\/abc \(stale\)\)/);
+  });
+
+  test('a legacy Prototypes table with no Link column passes when its rows hold URLs', async (t) => {
+    const legacy = '### Prototypes\n\n| Surface | Prototype | Published |\n| --- | --- | --- |\n| Picker | https://claude.ai/artifact/abc | yes |\n';
+    const ok = await check(t, { 'ux.md': legacy });
+    assert.equal(ok.status, 0, ok.stdout);
+    const missing = await check(t, { 'ux.md': legacy.replace('https://claude.ai/artifact/abc', '`ux/picker.html`') });
+    assert.match(missing.stdout, /Picker: no published claude\.ai link \(got "blank"\)/);
+  });
+
+  test('a link to any host other than claude.ai is not a published prototype', async (t) => {
+    const r = await check(t, { 'ux.md': UX(['| Picker flow | HTML prototype | https://internal-wiki.example/x | S-1 | round 2 |']) });
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /Picker flow: no published claude\.ai link \(got "https:\/\/internal-wiki\.example\/x"\)/);
+    const legacy = '### Prototypes\n\n| Surface | Prototype |\n| --- | --- |\n| Picker | https://www.figma.com/file/abc |\n';
+    assert.match((await check(t, { 'ux.md': legacy })).stdout, /Picker: no published claude\.ai link \(got "https:\/\/www\.figma\.com\/file\/abc"\)/);
+  });
+
+  test('the index Prototype row must match the primary prototype; a missing row is advice', async (t) => {
+    const ux = UX([CANVAS]);
+    const withRow = (url) => ({ 'ux.md': ux, 'README.md': INDEX.replace('| **Owner** | Sam |', `| **Owner** | Sam |\n| **Prototype** | ${url} |`) });
+    assert.equal((await check(t, withRow('[canvas](https://claude.ai/artifact/abc)'))).status, 0);
+    const stale = await check(t, withRow('https://claude.ai/artifact/old'));
+    assert.equal(stale.status, 1);
+    assert.match(stale.stdout, /README\.md's Prototype row \(https:\/\/claude\.ai\/artifact\/old\) is not ux\.md's primary prototype \(https:\/\/claude\.ai\/artifact\/abc\)/);
+    const noRow = await check(t, { 'ux.md': ux });
+    assert.equal(noRow.status, 0, noRow.stdout);
+    assert.match(noRow.stdout, /NOTE\s+README\.md has no Prototype row/);
+  });
+
+  test('a Prototypes section marked N/A passes; a ux.md with no section gets advice, not a failure', async (t) => {
+    const na = '## 4. Prototypes\n\nN/A — `ux_prototypes: wireframes`.\n';
+    assert.equal((await check(t, { 'ux.md': na })).status, 0);
+    const old = await check(t, { 'ux.md': '## 3. Surface inventory\n\nNone.\n' });
+    assert.equal(old.status, 0, old.stdout);
+    assert.match(old.stdout, /NOTE\s+ux\.md has no Prototypes section/);
+  });
+});
+
+test('the UX template has the Prototypes section and columns the check reads', () => {
+  const tpl = readFileSync(join(script('design-team', 'check-package.mjs'), '..', '..', 'templates', 'ux-template.md'), 'utf8');
+  assert.match(tpl, /^## (\d+\. )?Prototypes$/m);
+  assert.match(tpl, /Table with columns `Prototype \| Kind \| Link \| Shows \| Synced to`/);
+});
+
 test('the package index template has the feedback section the check reads', () => {
   const tpl = readFileSync(join(script('design-team', 'check-package.mjs'), '..', '..', 'templates', 'package-index.md'), 'utf8');
   assert.match(tpl, /^## Engineering feedback$/m);

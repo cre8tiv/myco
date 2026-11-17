@@ -19,7 +19,9 @@ One line per actor, by ID: who they are and the context that matters. A-1, wareh
 
 ## How it works
 
-The key scenarios, one short paragraph each, from the actor's point of view. Link each to its UX flow and architecture flow. A reader who reads only this section should be able to say what the thing does.
+If the package has a prototype, open with one line linking it — "**Try it:** [the prototype](<claude.ai link>), artboards per surface and state" — using the links in `ux.md`'s Prototypes table. Seeing the design is usually the fastest way in.
+
+The key scenarios, one short paragraph each, from the actor's point of view. Link each to its UX flow and architecture flow, and to the prototype artboard that shows it, when there is one. A reader who reads only this section should be able to say what the thing does.
 
 ## What's in phase 1
 
