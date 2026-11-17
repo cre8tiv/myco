@@ -373,6 +373,15 @@ const SCRIPT = `
 })();
 </script>`;
 
+/**
+ * The first http(s) URL in an index field, as a new-tab link; '' when there is none.
+ * @param {string | undefined} value @param {string} label @returns {string}
+ */
+function fieldLink(value, label) {
+  const m = (value || '').match(/https?:\/\/[^\s)>\]|]+/);
+  return m ? `<a href="${esc(m[0])}" target="_blank" rel="noopener">${esc(label)}</a>` : '';
+}
+
 /** @param {Record<string,string>} opts */
 function renderPackage(opts) {
   const dir = path.resolve(opts.dir);
@@ -398,6 +407,7 @@ function renderPackage(opts) {
     `<span class="pill ${statusClass(status)}">${esc(status)}</span>`,
     fields.owner ? `<span>Owner <b>${esc(fields.owner)}</b></span>` : '',
     opts.round ? `<span>Review round <b>${esc(opts.round)}</b></span>` : '',
+    fieldLink(fields.prototype, 'Open prototype') ? `<span>${fieldLink(fields.prototype, 'Open prototype')}</span>` : '',
     `<span>Rendered <b>${date}</b>${commit ? ` from <b>${esc(commit)}</b>` : ''}${dirty ? ' (with uncommitted edits)' : ''}</span>`,
   ].filter(Boolean).join('');
 
@@ -436,16 +446,14 @@ function renderHub(opts) {
     })
     .sort((a, b) => (b.fields['last updated'] || '').localeCompare(a.fields['last updated'] || ''));
   const date = new Date().toISOString().slice(0, 10);
-  const linkOf = (v) => {
-    const m = (v || '').match(/https?:\/\/[^\s)>\]]+/);
-    return m ? `<a href="${esc(m[0])}" target="_blank" rel="noopener">Open review</a>` : '<span class="note-inline">Not published</span>';
-  };
+  const linkOf = (v, label, none) => fieldLink(v, label) || `<span class="note-inline">${none}</span>`;
   const rows = pkgs.map((p) => {
     const status = (p.fields.status || 'Draft').replace(/[<>]/g, '');
     return `<tr><td><b>${esc(p.name)}</b><br><code class="path">${esc(p.slug)}</code></td>
 <td><span class="pill ${statusClass(status)}">${esc(status)}</span></td>
 <td>${esc(p.fields.owner || '')}</td><td style="font-variant-numeric: tabular-nums">${esc(p.fields['last updated'] || '')}</td>
-<td>${linkOf(p.fields['review page'])}</td></tr>`;
+<td>${linkOf(p.fields['review page'], 'Open review', 'Not published')}</td>
+<td>${linkOf(p.fields.prototype, 'Open prototype', '—')}</td></tr>`;
   }).join('\n');
   const title = opts.title || 'Design packages';
 
@@ -461,12 +469,12 @@ ${STYLE}
 <main>
 <section class="doc" id="packages">
 <div class="body" style="max-width:none">
-${pkgs.length ? `<div class="scroll"><table><thead><tr><th>Initiative</th><th>Status</th><th>Owner</th><th>Last updated</th><th>Review page</th></tr></thead><tbody>
+${pkgs.length ? `<div class="scroll"><table><thead><tr><th>Initiative</th><th>Status</th><th>Owner</th><th>Last updated</th><th>Review page</th><th>Prototype</th></tr></thead><tbody>
 ${rows}
 </tbody></table></div>` : '<p>No design packages yet.</p>'}
 </div>
 </section>
-<p class="note">Each review page is private until its owner shares it. The markdown packages in the repository are the source of truth.</p>
+<p class="note">Each review page and prototype is private until its owner shares it. The markdown packages in the repository are the source of truth.</p>
 </main>
 </div>
 `;

@@ -307,6 +307,45 @@ describe('engineering feedback in the index', () => {
   });
 });
 
+describe('UX prototypes', () => {
+  const UX = (rows) => `| | |\n| --- | --- |\n| **Status** | All open questions resolved |\n\n## 4. Prototypes\n\n| Prototype | Kind | Link | Shows | Synced to |\n| --- | --- | --- | --- | --- |\n${rows.join('\n')}\n\n## 5. Flows\n\nNone.\n`;
+  const CANVAS = '| Picker flow | Claude Design canvas | [canvas](https://claude.ai/artifact/abc) | S-1, S-2 | round 2, D-1 |';
+
+  test('every prototype with a published link passes; an unfilled template row is ignored', async (t) => {
+    const r = await check(t, { 'ux.md': UX([CANVAS, '| <name> | <kind> | <link> | <S-n> | <round> |']) });
+    assert.equal(r.status, 0, r.stdout);
+    assert.match(r.stdout, /PASS\s+Every UX prototype is published and linked from ux\.md/);
+  });
+
+  test('a prototype with only a ux/ path, or none, is named', async (t) => {
+    const r = await check(t, { 'ux.md': UX([CANVAS, '| Settings | HTML prototype | not published — `ux/settings.html` | S-3 | round 2 |', '| Empty | HTML prototype | | S-4 | round 1 |']) });
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /Settings: no published link \(got "not published — `ux\/settings\.html`"\)/);
+    assert.match(r.stdout, /Empty: no published link \(got "blank"\)/);
+    assert.doesNotMatch(r.stdout, /Picker flow:/);
+  });
+
+  test('a prototype marked stale fails', async (t) => {
+    const r = await check(t, { 'ux.md': UX(['| Picker flow | Claude Design canvas | https://claude.ai/artifact/abc | S-1 | stale — synced to round 1 |']) });
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /Picker flow: marked stale/);
+  });
+
+  test('a Prototypes section marked N/A passes; a ux.md with no section gets advice, not a failure', async (t) => {
+    const na = '## 4. Prototypes\n\nN/A — `ux_prototypes: wireframes`.\n';
+    assert.equal((await check(t, { 'ux.md': na })).status, 0);
+    const old = await check(t, { 'ux.md': '## 3. Surface inventory\n\nNone.\n' });
+    assert.equal(old.status, 0, old.stdout);
+    assert.match(old.stdout, /NOTE\s+ux\.md has no Prototypes section/);
+  });
+});
+
+test('the UX template has the Prototypes section and columns the check reads', () => {
+  const tpl = readFileSync(join(script('design-team', 'check-package.mjs'), '..', '..', 'templates', 'ux-template.md'), 'utf8');
+  assert.match(tpl, /^## 4\. Prototypes$/m);
+  assert.match(tpl, /Table with columns `Prototype \| Kind \| Link \| Shows \| Synced to`/);
+});
+
 test('the package index template has the feedback section the check reads', () => {
   const tpl = readFileSync(join(script('design-team', 'check-package.mjs'), '..', '..', 'templates', 'package-index.md'), 'utf8');
   assert.match(tpl, /^## Engineering feedback$/m);

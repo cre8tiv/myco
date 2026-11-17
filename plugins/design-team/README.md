@@ -88,7 +88,11 @@ The ux-designer builds prototypes for surfaces where layout or interaction is th
 - **`html`** — self-contained HTML under `ux/`, opening straight from disk, with every state reachable. Published as a page when the Artifact tool is available.
 - **`wireframes`** — text wireframes only.
 
-`ux.md` always carries the flows, states table and text wireframes, whatever the mode — it's what engineering and QA read. When the ux-designer can't publish a prototype itself, the product lead publishes it from your session. Published prototypes are private until you share them.
+`ux.md` always carries the flows, states table and text wireframes, whatever the mode — it's what engineering and QA read. When the ux-designer can't publish a prototype itself, the product lead publishes it from your session.
+
+**Every prototype is linked from the package.** `ux.md`'s *Prototypes* table lists each canvas or page with its claude.ai link, the surfaces and states it shows, and the round it's synced to; each surface in the inventory links to its artboard. The primary prototype also goes in the package index's **Prototype** row, which the review page header and the design hub link to. When a decision changes a surface, the prototype is updated at the same link rather than recreated, so a canvas link shared early stays current. `check-package.mjs` fails a package with an unpublished or stale prototype, and `/publish-review` publishes any HTML prototype still sitting under `ux/` before the review page goes out.
+
+Published prototypes are private until you share them, and sharing the review page doesn't share the canvas it links to — share both with your reviewers.
 
 `/init-design` also takes stock of the design systems and design artifacts that already exist — claude.ai design systems, earlier Claude Design canvases, the repo's tokens and component library, Figma libraries — and records the relevant ones, and which is canonical, in `design.md`. The ux-designer reads them before designing, applies the canonical tokens even to HTML prototypes, and extends existing Figma frames and components rather than approximating them.
 

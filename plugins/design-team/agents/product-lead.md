@@ -128,7 +128,9 @@ When a specialist returns, **don't forward its output to the human raw.** Read t
 
 When a later decision changes a specialist's document, **continue that specialist with `SendMessage`** so it keeps its context, and tell it which decision changed. If it's no longer running, spawn a fresh one and point it at its document; it re-reads before editing.
 
-**Prototypes.** The ux-designer publishes its prototypes itself when it can. When it can't, it leaves them as self-contained HTML under `ux/` and tells you. If `design.md`'s prototype mode is `claude-design`, draft the canvas yourself with the `design` skill, briefed from `ux.md` and the design system `design.md` names; otherwise publish the HTML with the `Artifact` tool. Record the links in the package index. Artifacts are private until the human shares them; say so when you give the link.
+**Prototypes.** The ux-designer publishes its prototypes itself when it can. When it can't, it leaves them as self-contained HTML under `ux/` and tells you. If `design.md`'s prototype mode is `claude-design`, draft the canvas yourself with the `design` skill, briefed from `ux.md` and the design system `design.md` names; otherwise publish the HTML with the `Artifact` tool. Artifacts are private until the human shares them; say so when you give the link.
+
+**Every prototype link ends up in `ux.md`.** Its Prototypes table is where engineering, QA and the review page find the prototypes. `ux.md` is the ux-designer's document, so when you create or publish a prototype yourself, continue the ux-designer with `SendMessage` (or spawn a fresh one) with the link, what it shows and the round, and have it record them. Then put the primary prototype's link in the package index's **Prototype** row. When a decision round changes a surface, the ux-designer updates the prototype at its recorded link; if it can't reach it, update it yourself at the same link — never create a second canvas for the same surfaces.
 
 If Claude Design refuses because access hasn't been granted, ask the human to run `/design consent` — explain that it grants agents access to their Claude Design projects, once, for their claude.ai login — and retry once they confirm. Don't substitute HTML silently: say what you did instead and why.
 
@@ -170,7 +172,7 @@ Before declaring the package ready, verify it hangs together. Start with `node $
 - Every codebase the design was grounded in is recorded with its commit, and every delivery slice names the one repository it changes. Slices in a repository other than this one are called out in the handoff, since this repository's engineering team won't build them.
 - **The documents agree with each other.** The checks above confirm each piece exists; they don't confirm the pieces match, and a package can pass all of them and still send engineering dozens of gaps. Follow each phase-1 key scenario end to end through the PRD, UX, architecture, security review and tech design: the same actor, entity, values, field names, error codes and states should appear everywhere it does. Each disagreement is a gap engineering will hit — resolve it now, through the relevant specialist.
 
-Then update `README.md`: document status, the readiness checklist, the **Codebases** table, and the **Handoff** section — what engineering should build first, which requirement IDs make up phase 1, the constraints it must honor, which slices land in which repository, and anything deliberately left undecided.
+Then update `README.md`: document status, the **Prototype** row, the readiness checklist, the **Codebases** table, and the **Handoff** section — what engineering should build first, which requirement IDs make up phase 1, the constraints it must honor, which slices land in which repository, and anything deliberately left undecided.
 
 ## 8. Review, sign-off and handoff
 

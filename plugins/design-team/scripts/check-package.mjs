@@ -266,8 +266,28 @@ const secIds = new Set();
   record('No engineering feedback is still open', problems);
 }
 
-// ---- ADRs referenced (advice, not a failure: only ADRs that constrain implementation must be)
 const advice = [];
+
+// ---- UX prototypes linked (a package written before the Prototypes section existed gets advice, not a failure)
+if (docs['ux.md']) {
+  const body = section(docs['ux.md'], /^(\d+\.\s*)?prototypes\b/i);
+  if (body === null) {
+    advice.push('ux.md has no Prototypes section; list each prototype with its claude.ai link there, or mark it N/A with a reason');
+  } else {
+    const problems = [];
+    for (const r of tables(body).flat()) {
+      const cells = Object.values(r).map((c) => c.trim());
+      if (cells.every((c) => BLANK.test(c) || /^<.*>$/.test(c))) continue;
+      const name = cells[0] || '(row)';
+      const link = col(r, 'link');
+      if (!/https?:\/\//.test(link)) problems.push(`${name}: no published link (got "${link || 'blank'}")`);
+      if (/\bstale\b/i.test(col(r, 'synced'))) problems.push(`${name}: marked stale (${col(r, 'synced')}); update it at the same link`);
+    }
+    record('Every UX prototype is published and linked from ux.md', problems);
+  }
+}
+
+// ---- ADRs referenced (advice, not a failure: only ADRs that constrain implementation must be)
 {
   const adrs = [...new Set((docs['architecture.md'] || '').match(/^#{2,4}\s+ADR-\d+/gim)?.map((h) => h.match(/ADR-\d+/i)?.[0].toUpperCase()) ?? [])];
   const unreferenced = adrs.filter((a) => techDesign && !new RegExp(`\\b${a}\\b`, 'i').test(techDesign));
