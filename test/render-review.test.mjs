@@ -276,6 +276,44 @@ describe('links', () => {
   });
 });
 
+describe('YAML front matter', () => {
+  const FRONT = ['---', 'type: design', 'title: LLM Gateway semantic routing — UX', 'description: >', '  How a user sets up routing.', 'resource: initiatives/ai-gateway-llm-advanced-routing', 'tags: [ux, routing]', 'timestamp: 2026-11-10', '---', '', ''].join('\n');
+  /** Page text with tags removed. @param {string} html */
+  const text = (html) => html.replace(/<[^>]+>/g, ' ');
+
+  test('is not rendered on the page, in the Overview or any document', async (t) => {
+    // Regression: every document in a real package began with this block, and it showed as a paragraph (7 times).
+    const sb = sandbox(t);
+    const docs = Object.fromEntries(['review.md', 'prd.md', 'architecture.md', 'security-review.md', 'tech-design.md', 'ux.md'].map((f) => [f, `${FRONT}## Section in ${f}\n\nBody.\n`]));
+    const html = await render(sb, pkg(sb, { ...docs, 'README.md': `${FRONT}${README}` }));
+    assert.equal((text(html).match(/resource: initiatives|type: design/g) || []).length, 0);
+    for (const f of Object.keys(docs)) assert.ok(html.includes(`Section in ${f}`), f);
+    assert.match(html, /<h1>Order exceptions<\/h1>/);
+  });
+
+  test('only a block at the very start counts; a later --- is still a rule', async (t) => {
+    const sb = sandbox(t);
+    const body = await renderDoc(sb, `${FRONT}Intro.\n\n---\n\nAfter the rule.\n`);
+    assert.doesNotMatch(body, /type: design/);
+    assert.match(body, /<p>Intro\.<\/p>/);
+    assert.match(body, /<hr>/);
+    assert.match(body, /After the rule\./);
+  });
+
+  test('a document that opens with a rule and never closes it keeps its text', async (t) => {
+    const sb = sandbox(t);
+    const body = await renderDoc(sb, '---\n\nNo front matter here.\n');
+    assert.match(body, /No front matter here\./);
+  });
+
+  test('Windows line endings and a byte-order mark are handled', async (t) => {
+    const sb = sandbox(t);
+    const body = await renderDoc(sb, `﻿${FRONT}Body text.\n`.replace(/\n/g, '\r\n'));
+    assert.doesNotMatch(body, /type: design/);
+    assert.match(body, /Body text\./);
+  });
+});
+
 describe('the light/dark toggle', () => {
   /** The inline scripts in a page, in order. @param {string} html */
   const scripts = (html) => [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
