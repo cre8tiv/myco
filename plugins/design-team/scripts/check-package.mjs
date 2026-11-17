@@ -103,6 +103,13 @@ const isTemplateRow = (row) => Object.values(row).every(isPlaceholder);
 const firstUrl = (s) => (s || '').match(/https?:\/\/[^\s)>\]|]+/)?.[0] ?? '';
 
 /**
+ * The first claude.ai link in text, or ''. Claude Design canvases and pages published
+ * with the Artifact tool both live there, so it is what a published prototype links to.
+ * @param {string | undefined} s @returns {string}
+ */
+const claudeLink = (s) => (s || '').match(/https:\/\/claude\.ai\/[^\s)>\]|]+/)?.[0] ?? '';
+
+/**
  * IDs in text, with ranges like `COL-1–COL-3` or `COL-1..3` expanded.
  * @param {string} s @returns {string[]}
  */
@@ -288,11 +295,11 @@ if (docs['ux.md']) {
       if (isTemplateRow(r)) continue;
       const cells = Object.values(r).map((c) => c.trim());
       const name = cells[0] || '(row)';
-      // A table written before the Link column existed: accept a URL in any cell.
+      // A table written before the Link column existed: look for the link in any cell.
       const hasLinkCol = Object.keys(r).some((k) => k.includes('link'));
-      const link = hasLinkCol ? col(r, 'link') : cells.find((c) => firstUrl(c)) ?? '';
-      if (!firstUrl(link)) problems.push(`${name}: no published link (got "${link || 'blank'}")`);
-      else if (!primary) primary = firstUrl(link);
+      const link = hasLinkCol ? col(r, 'link') : cells.find((c) => claudeLink(c)) ?? cells.find((c) => firstUrl(c)) ?? '';
+      if (!claudeLink(link)) problems.push(`${name}: no published claude.ai link (got "${link || 'blank'}")`);
+      else if (!primary) primary = claudeLink(link);
       const stale = cells.find((c) => /\bstale\b/i.test(c));
       if (stale) problems.push(`${name}: marked stale (${stale}); update it at the same link`);
     }

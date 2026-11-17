@@ -320,8 +320,8 @@ describe('UX prototypes', () => {
   test('a prototype with only a ux/ path, or none, is named', async (t) => {
     const r = await check(t, { 'ux.md': UX([CANVAS, '| Settings | HTML prototype | not published — `ux/settings.html` | S-3 | round 2 |', '| Empty | HTML prototype | | S-4 | round 1 |']) });
     assert.equal(r.status, 1);
-    assert.match(r.stdout, /Settings: no published link \(got "not published — `ux\/settings\.html`"\)/);
-    assert.match(r.stdout, /Empty: no published link \(got "blank"\)/);
+    assert.match(r.stdout, /Settings: no published claude\.ai link \(got "not published — `ux\/settings\.html`"\)/);
+    assert.match(r.stdout, /Empty: no published claude\.ai link \(got "blank"\)/);
     assert.doesNotMatch(r.stdout, /Picker flow:/);
   });
 
@@ -342,7 +342,15 @@ describe('UX prototypes', () => {
     const ok = await check(t, { 'ux.md': legacy });
     assert.equal(ok.status, 0, ok.stdout);
     const missing = await check(t, { 'ux.md': legacy.replace('https://claude.ai/artifact/abc', '`ux/picker.html`') });
-    assert.match(missing.stdout, /Picker: no published link \(got "blank"\)/);
+    assert.match(missing.stdout, /Picker: no published claude\.ai link \(got "blank"\)/);
+  });
+
+  test('a link to any host other than claude.ai is not a published prototype', async (t) => {
+    const r = await check(t, { 'ux.md': UX(['| Picker flow | HTML prototype | https://internal-wiki.example/x | S-1 | round 2 |']) });
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /Picker flow: no published claude\.ai link \(got "https:\/\/internal-wiki\.example\/x"\)/);
+    const legacy = '### Prototypes\n\n| Surface | Prototype |\n| --- | --- |\n| Picker | https://www.figma.com/file/abc |\n';
+    assert.match((await check(t, { 'ux.md': legacy })).stdout, /Picker: no published claude\.ai link \(got "https:\/\/www\.figma\.com\/file\/abc"\)/);
   });
 
   test('the index Prototype row must match the primary prototype; a missing row is advice', async (t) => {
