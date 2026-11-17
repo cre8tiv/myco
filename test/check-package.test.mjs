@@ -312,7 +312,7 @@ describe('UX prototypes', () => {
   const CANVAS = '| Picker flow | Claude Design canvas | [canvas](https://claude.ai/artifact/abc) | S-1, S-2 | round 2, D-1 |';
 
   test('every prototype with a published link passes; an unfilled template row is ignored', async (t) => {
-    const r = await check(t, { 'ux.md': UX([CANVAS, '| <name> | <kind> | <link> | <S-n> | <round> |']) });
+    const r = await check(t, { 'ux.md': UX([CANVAS, '| <name> | <kind> | <link> | <S-n> | <round> |', '|  |  |  |  |  |']) });
     assert.equal(r.status, 0, r.stdout);
     assert.match(r.stdout, /PASS\s+Every UX prototype is published and linked from ux\.md/);
   });
@@ -331,6 +331,32 @@ describe('UX prototypes', () => {
     assert.match(r.stdout, /Picker flow: marked stale/);
   });
 
+  test('"stale" in any cell fails, not just Synced to', async (t) => {
+    const r = await check(t, { 'ux.md': UX(['| Picker flow | Claude Design canvas | https://claude.ai/artifact/abc (stale) | S-1 | round 1, D-3 |']) });
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /Picker flow: marked stale \(https:\/\/claude\.ai\/artifact\/abc \(stale\)\)/);
+  });
+
+  test('a legacy Prototypes table with no Link column passes when its rows hold URLs', async (t) => {
+    const legacy = '### Prototypes\n\n| Surface | Prototype | Published |\n| --- | --- | --- |\n| Picker | https://claude.ai/artifact/abc | yes |\n';
+    const ok = await check(t, { 'ux.md': legacy });
+    assert.equal(ok.status, 0, ok.stdout);
+    const missing = await check(t, { 'ux.md': legacy.replace('https://claude.ai/artifact/abc', '`ux/picker.html`') });
+    assert.match(missing.stdout, /Picker: no published link \(got "blank"\)/);
+  });
+
+  test('the index Prototype row must match the primary prototype; a missing row is advice', async (t) => {
+    const ux = UX([CANVAS]);
+    const withRow = (url) => ({ 'ux.md': ux, 'README.md': INDEX.replace('| **Owner** | Sam |', `| **Owner** | Sam |\n| **Prototype** | ${url} |`) });
+    assert.equal((await check(t, withRow('[canvas](https://claude.ai/artifact/abc)'))).status, 0);
+    const stale = await check(t, withRow('https://claude.ai/artifact/old'));
+    assert.equal(stale.status, 1);
+    assert.match(stale.stdout, /README\.md's Prototype row \(https:\/\/claude\.ai\/artifact\/old\) is not ux\.md's primary prototype \(https:\/\/claude\.ai\/artifact\/abc\)/);
+    const noRow = await check(t, { 'ux.md': ux });
+    assert.equal(noRow.status, 0, noRow.stdout);
+    assert.match(noRow.stdout, /NOTE\s+README\.md has no Prototype row/);
+  });
+
   test('a Prototypes section marked N/A passes; a ux.md with no section gets advice, not a failure', async (t) => {
     const na = '## 4. Prototypes\n\nN/A — `ux_prototypes: wireframes`.\n';
     assert.equal((await check(t, { 'ux.md': na })).status, 0);
@@ -342,7 +368,7 @@ describe('UX prototypes', () => {
 
 test('the UX template has the Prototypes section and columns the check reads', () => {
   const tpl = readFileSync(join(script('design-team', 'check-package.mjs'), '..', '..', 'templates', 'ux-template.md'), 'utf8');
-  assert.match(tpl, /^## 4\. Prototypes$/m);
+  assert.match(tpl, /^## (\d+\. )?Prototypes$/m);
   assert.match(tpl, /Table with columns `Prototype \| Kind \| Link \| Shows \| Synced to`/);
 });
 

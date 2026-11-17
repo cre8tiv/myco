@@ -14,7 +14,7 @@ This becomes `docs/design/<slug>/README.md`: the first file anyone opens, and th
 | **Last updated** | <date> |
 | **Adopted from** | <source link, its version or date, and when it was fetched — or "new"> |
 | **Review page** | <claude.ai artifact link, once published — or "not published"> |
-| **Prototype** | <the primary prototype's claude.ai link (the Claude Design canvas, when there is one), from `ux.md`'s Prototypes table — or "none"> |
+| **Prototype** | <the primary prototype's claude.ai link — the first row of `ux.md`'s Prototypes table, usually the Claude Design canvas — or "none"> |
 
 <One paragraph: what this is and why, from the PRD's problem and positioning.>
 ```
@@ -31,7 +31,7 @@ Table with columns `Document | Author | Status | Open questions`. List only the 
 | [Tech design](tech-design.md) | tech-designer | | |
 | [UX](ux.md) | ux-designer | | |
 
-**Prototypes:** see [UX › Prototypes](ux.md#4-prototypes), which lists every prototype with its link, the surfaces it shows and the round it's synced to. The header's **Prototype** row carries the primary one.
+**Prototypes:** see the Prototypes section of [UX](ux.md), which lists every prototype with its link, the surfaces it shows and the round it's synced to. The header's **Prototype** row carries the primary one.
 
 **Published copies:** one line per destination — where, link, date, and the version published.
 

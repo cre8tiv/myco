@@ -393,6 +393,7 @@ function renderPackage(opts) {
   const commit = lastCommit(dir);
   const dirty = uncommitted(dir);
   const date = new Date().toISOString().slice(0, 10);
+  const prototype = fieldLink(fields.prototype, 'Open prototype');
 
   /** @type {[string, string, string][]} id, label, html */
   const sections = [];
@@ -407,7 +408,7 @@ function renderPackage(opts) {
     `<span class="pill ${statusClass(status)}">${esc(status)}</span>`,
     fields.owner ? `<span>Owner <b>${esc(fields.owner)}</b></span>` : '',
     opts.round ? `<span>Review round <b>${esc(opts.round)}</b></span>` : '',
-    fieldLink(fields.prototype, 'Open prototype') ? `<span>${fieldLink(fields.prototype, 'Open prototype')}</span>` : '',
+    prototype ? `<span>${prototype}</span>` : '',
     `<span>Rendered <b>${date}</b>${commit ? ` from <b>${esc(commit)}</b>` : ''}${dirty ? ' (with uncommitted edits)' : ''}</span>`,
   ].filter(Boolean).join('');
 
@@ -446,7 +447,11 @@ function renderHub(opts) {
     })
     .sort((a, b) => (b.fields['last updated'] || '').localeCompare(a.fields['last updated'] || ''));
   const date = new Date().toISOString().slice(0, 10);
-  const linkOf = (v, label, none) => fieldLink(v, label) || `<span class="note-inline">${none}</span>`;
+  /**
+   * An index field's link, or muted fallback text when it holds no URL.
+   * @param {string | undefined} v @param {string} label @param {string} none @returns {string}
+   */
+  const linkOf = (v, label, none) => fieldLink(v, label) || `<span class="note-inline">${esc(none)}</span>`;
   const rows = pkgs.map((p) => {
     const status = (p.fields.status || 'Draft').replace(/[<>]/g, '');
     return `<tr><td><b>${esc(p.name)}</b><br><code class="path">${esc(p.slug)}</code></td>

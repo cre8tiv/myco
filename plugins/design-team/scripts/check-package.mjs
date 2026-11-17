@@ -93,6 +93,15 @@ function tables(text) {
 /** The first column whose header contains `word`. @param {Record<string,string>} row @param {string} word */
 const col = (row, word) => row[Object.keys(row).find((k) => k.includes(word)) ?? ''] ?? '';
 
+/** An unfilled template cell: blank, or a `<placeholder>`. @param {string} cell @returns {boolean} */
+const isPlaceholder = (cell) => BLANK.test(cell) || /^<.*>$/.test(cell.trim());
+
+/** A table row copied from a template and never filled in. @param {Record<string,string>} row @returns {boolean} */
+const isTemplateRow = (row) => Object.values(row).every(isPlaceholder);
+
+/** The first http(s) URL in text, or ''. @param {string | undefined} s @returns {string} */
+const firstUrl = (s) => (s || '').match(/https?:\/\/[^\s)>\]|]+/)?.[0] ?? '';
+
 /**
  * IDs in text, with ranges like `COL-1–COL-3` or `COL-1..3` expanded.
  * @param {string} s @returns {string[]}
@@ -244,7 +253,7 @@ const secIds = new Set();
   if (!rows.length) problems.push('the index has no Codebases table');
   for (const r of rows) {
     const name = Object.values(r)[0] || '(row)';
-    if (/^<.*>$/.test(name.trim()) || BLANK.test(name)) continue;
+    if (isPlaceholder(name)) continue;
     const commit = col(r, 'commit').replace(/[`*]/g, '').trim();
     if (!/^[0-9a-f]{7,40}$/i.test(commit)) problems.push(`${name}: no commit recorded (got "${commit || 'blank'}")`);
   }
@@ -255,9 +264,8 @@ const secIds = new Set();
 {
   const problems = [];
   for (const r of tables(section(index, /^engineering feedback/i)).flat()) {
-    const cells = Object.values(r).map((c) => c.trim());
-    if (cells.every((c) => BLANK.test(c) || /^<.*>$/.test(c))) continue;
-    const n = cells[0] || '?';
+    if (isTemplateRow(r)) continue;
+    const n = Object.values(r)[0]?.trim() || '?';
     const status = col(r, 'status').replace(/[*_]/g, '').trim().toLowerCase();
     if (!/^(open|decided|declined)$/.test(status)) problems.push(`feedback #${n}: status "${status || 'blank'}" is not Open, Decided or Declined`);
     else if (status === 'open') problems.push(`feedback #${n} is still Open: ${col(r, 'problem').slice(0, 80)}`);
@@ -275,13 +283,25 @@ if (docs['ux.md']) {
     advice.push('ux.md has no Prototypes section; list each prototype with its claude.ai link there, or mark it N/A with a reason');
   } else {
     const problems = [];
+    let primary = '';
     for (const r of tables(body).flat()) {
+      if (isTemplateRow(r)) continue;
       const cells = Object.values(r).map((c) => c.trim());
-      if (cells.every((c) => BLANK.test(c) || /^<.*>$/.test(c))) continue;
       const name = cells[0] || '(row)';
-      const link = col(r, 'link');
-      if (!/https?:\/\//.test(link)) problems.push(`${name}: no published link (got "${link || 'blank'}")`);
-      if (/\bstale\b/i.test(col(r, 'synced'))) problems.push(`${name}: marked stale (${col(r, 'synced')}); update it at the same link`);
+      // A table written before the Link column existed: accept a URL in any cell.
+      const hasLinkCol = Object.keys(r).some((k) => k.includes('link'));
+      const link = hasLinkCol ? col(r, 'link') : cells.find((c) => firstUrl(c)) ?? '';
+      if (!firstUrl(link)) problems.push(`${name}: no published link (got "${link || 'blank'}")`);
+      else if (!primary) primary = firstUrl(link);
+      const stale = cells.find((c) => /\bstale\b/i.test(c));
+      if (stale) problems.push(`${name}: marked stale (${stale}); update it at the same link`);
+    }
+    // The index's Prototype row is what the review page and the hub link to; it must be the table's first row.
+    const indexRow = index.match(/^\s*\|\s*\*{0,2}Prototype\*{0,2}\s*\|\s*(.*?)\s*\|/im);
+    if (primary && indexRow && firstUrl(indexRow[1]) !== primary) {
+      problems.push(`README.md's Prototype row (${firstUrl(indexRow[1]) || indexRow[1] || 'blank'}) is not ux.md's primary prototype (${primary})`);
+    } else if (primary && !indexRow) {
+      advice.push(`README.md has no Prototype row; add one with ux.md's primary prototype (${primary}) so the review page and hub link it`);
     }
     record('Every UX prototype is published and linked from ux.md', problems);
   }

@@ -50,11 +50,11 @@ Use the **prototype mode** in `design.md`, adapting to what is actually availabl
 
 A prototype nobody can find from the package doesn't exist for engineering, QA or reviewers. As soon as a canvas or prototype exists:
 
-- **Record it in `ux.md`'s Prototypes table**: kind, the claude.ai link the `design` skill or `Artifact` tool returned (use it exactly as given), the surfaces and states it shows, and the round and D-decision it's synced to. The first row is the primary prototype; put its link in `ux.md`'s header **Prototype** row too.
+- **Record it in `ux.md`'s Prototypes table**: kind, the claude.ai link the `design` skill or `Artifact` tool returned (use it exactly as given), the surfaces and states it shows, and the round and D-decision it's synced to. The first row is the primary prototype; the product-lead copies its link into the package index.
 - **Link each surface to it**: the inventory's *Prototype* column points at the artboard or prototype that shows that surface.
 - **An unpublished HTML prototype** is listed as "not published — `ux/<file>.html`" until it has a link. Never leave a row without one or the other.
 
-**Keep it in step with `ux.md`.** When a decision changes a surface, update the existing canvas or page at its recorded link — in Claude Design, edit the same canvas; with the `Artifact` tool, publish to the recorded `url` — and bump *Synced to*. Don't create a second canvas for the same surfaces: a link a reviewer was given in round 1 has to show round 3. If you can't reach the prototype this time, mark the row "stale — synced to round n" and tell the product-lead.
+**Keep it in step with `ux.md`.** When a decision changes a surface, update the existing canvas or page at its recorded link — in Claude Design, edit the same canvas; with the `Artifact` tool, publish to the recorded `url` — and bump *Synced to*. Don't create a second canvas for the same surfaces: a link a reviewer was given in round 1 has to show round 3. If you can't reach the prototype this time, write "stale — synced to round n" in that row's *Synced to* cell and tell the product-lead.
 
 A published prototype is private until the human shares it; say so when you report the link.
 

@@ -9,7 +9,6 @@ Use these sections in this order. Guidance under each heading is for you; replac
 | --- | --- |
 | **Status** | Draft — N open questions |
 | **PRD** | [prd.md](prd.md) |
-| **Prototype** | <primary prototype's claude.ai link — or "none"> |
 | **Last updated** | <date> |
 ```
 
@@ -32,9 +31,9 @@ Every prototype for this package, so anyone reading `ux.md` (engineering, QA, or
 - **Kind:** Claude Design canvas, or HTML prototype.
 - **Link:** the published claude.ai link. An HTML prototype also lists its `ux/` path. A prototype that isn't published yet says "not published — `ux/<file>.html`", and the product lead publishes it before review.
 - **Shows:** the surfaces (`S-n`) and states it covers.
-- **Synced to:** the round and the last D-decision the prototype reflects. When a decision changes a surface, update the prototype at the same link and bump this; never start a new canvas for the same surfaces.
+- **Synced to:** the round and the last D-decision the prototype reflects. When a decision changes a surface, update the prototype at the same link and bump this; never start a new canvas for the same surfaces. A prototype that lags `ux.md` says so here: "stale — synced to round n".
 
-The first row is the package's primary prototype, the one the package index and review page link to. Write N/A with a one-line reason when there are no prototypes (for example, `ux_prototypes: wireframes`).
+The first row is the package's primary prototype. The package index's **Prototype** row carries the same link, and the review page and design hub link to it from there; `check-package.mjs` fails the package when the two differ. Write N/A with a one-line reason when there are no prototypes (for example, `ux_prototypes: wireframes`).
 
 Prototypes are private until their owner shares them. Share them with the same people as the review page.
 
