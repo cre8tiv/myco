@@ -345,6 +345,10 @@ pre { margin: 0; padding: 12px 14px; background: var(--surface); border: 1px sol
 pre code { background: none; padding: 0; }
 .diagram pre.mermaid { background: var(--surface); text-align: center; }
 .note { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
+.top-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.theme-toggle { font: 500 12px/1 var(--font-mono); color: var(--muted); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 999px; padding: 6px 11px; cursor: pointer; }
+.theme-toggle:hover, .theme-toggle:focus-visible { color: var(--fg); border-color: var(--accent); outline: none; }
 @media (max-width: 760px) {
   .wrap { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   nav.index { position: static; display: flex; flex-wrap: wrap; gap: 4px; }
@@ -352,6 +356,49 @@ pre code { background: none; padding: 0; }
 }
 @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
 </style>`;
+
+// Light/dark toggle. The stylesheet follows the system setting until the reader picks
+// one; the pick sets data-theme on <html> and is remembered per page where storage works.
+const THEME_KEY = 'design-review-theme';
+
+/** Applies a remembered theme before the page paints, so it doesn't flash the other one. */
+const THEME_BOOT = `
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem('${THEME_KEY}');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {}
+})();
+</script>`;
+
+/** The toggle button; hidden until the script below wires it, so it never shows dead. */
+const THEME_BUTTON = '<button type="button" class="theme-toggle" hidden></button>';
+
+const THEME_SCRIPT = `
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.querySelector('.theme-toggle');
+  if (!btn) return;
+  var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  function current() { return root.getAttribute('data-theme') || (mq && mq.matches ? 'dark' : 'light'); }
+  function label() {
+    var next = current() === 'dark' ? 'light' : 'dark';
+    btn.textContent = next === 'dark' ? '\\u263E Dark' : '\\u2600 Light';
+    btn.setAttribute('aria-label', 'Switch to ' + next + ' mode');
+  }
+  btn.addEventListener('click', function () {
+    var next = current() === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('${THEME_KEY}', next); } catch (e) {}
+    label();
+  });
+  if (mq && mq.addEventListener) mq.addEventListener('change', label);
+  label();
+  btn.hidden = false;
+})();
+</script>`;
 
 const SCRIPT = `
 <script>
@@ -414,9 +461,10 @@ function renderPackage(opts) {
 
   return `<title>${esc(title)}</title>
 ${STYLE}
+${THEME_BOOT}
 <div class="wrap">
 <header class="top">
-  <div class="eyebrow">Design package · ${esc(path.basename(dir))}</div>
+  <div class="top-row"><div class="eyebrow">Design package · ${esc(path.basename(dir))}</div>${THEME_BUTTON}</div>
   <h1>${esc(name || title)}</h1>
   <div class="facts">${facts}</div>
 </header>
@@ -432,6 +480,7 @@ ${html}</div>
 <p class="note">Rendered from the markdown in the repository, which stays the source of truth. Comment on anything here; the product lead collects comments into the next decision round.</p>
 </main>
 </div>
+${THEME_SCRIPT}
 ${SCRIPT}
 `;
 }
@@ -465,9 +514,10 @@ function renderHub(opts) {
   return `<title>${esc(title)}</title>
 ${STYLE}
 <style>.wrap.hub { grid-template-columns: minmax(0, 1fr); } .note-inline { color: var(--muted); font-size: 13px; }</style>
+${THEME_BOOT}
 <div class="wrap hub">
 <header class="top">
-  <div class="eyebrow">Design hub · ${esc(path.basename(root))}</div>
+  <div class="top-row"><div class="eyebrow">Design hub · ${esc(path.basename(root))}</div>${THEME_BUTTON}</div>
   <h1>${esc(title)}</h1>
   <div class="facts"><span><b>${pkgs.length}</b> package${pkgs.length === 1 ? '' : 's'}</span><span>Updated <b>${date}</b></span></div>
 </header>
@@ -482,6 +532,7 @@ ${rows}
 <p class="note">Each review page and prototype is private until its owner shares it. The markdown packages in the repository are the source of truth.</p>
 </main>
 </div>
+${THEME_SCRIPT}
 `;
 }
 

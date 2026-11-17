@@ -6,6 +6,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import vm from 'node:vm';
 import { sandbox, runNode, script } from './helpers.mjs';
 
 const RENDER = script('design-team', 'render-review.mjs');
@@ -272,6 +273,87 @@ describe('links', () => {
     assert.match(body, /<a href="https:\/\/example\.com\/docs" target="_blank" rel="noopener">docs<\/a>/);
     assert.match(body, /the handler <code class="path">src\/orders\/handler\.ts<\/code>/);
     assert.match(body, /<a href="https:\/\/example\.com\/raw" target="_blank" rel="noopener">https:\/\/example\.com\/raw<\/a>/);
+  });
+});
+
+describe('the light/dark toggle', () => {
+  /** The inline scripts in a page, in order. @param {string} html */
+  const scripts = (html) => [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+
+  /**
+   * Runs the page's theme scripts against a minimal DOM and returns handles to it.
+   * @param {string} html @param {{stored?: string, systemDark?: boolean, storageThrows?: boolean}} env
+   */
+  function boot(html, { stored = null, systemDark = false, storageThrows = false } = {}) {
+    const attrs = {};
+    const root = { getAttribute: (k) => attrs[k] ?? null, setAttribute: (k, v) => { attrs[k] = v; } };
+    let onClick = null;
+    const btn = { hidden: true, textContent: '', attributes: {}, setAttribute(k, v) { this.attributes[k] = v; }, addEventListener: (_, f) => { onClick = f; } };
+    const store = { value: stored };
+    const localStorage = {
+      getItem: () => { if (storageThrows) throw new Error('blocked'); return store.value; },
+      setItem: (_, v) => { if (storageThrows) throw new Error('blocked'); store.value = v; },
+    };
+    const sandboxGlobals = {
+      document: { documentElement: root, querySelector: (s) => (s === '.theme-toggle' ? btn : null), querySelectorAll: () => [] },
+      window: { matchMedia: () => ({ matches: systemDark, addEventListener() {} }) },
+      localStorage,
+    };
+    const theme = scripts(html).filter((s) => s.includes('theme'));
+    assert.equal(theme.length, 2, 'expected a boot script and a toggle script');
+    for (const s of theme) vm.runInNewContext(s, sandboxGlobals);
+    return { attrs, btn, store, click: () => onClick() };
+  }
+
+  test('both the package page and the hub get the button, hidden until the script wires it', async (t) => {
+    const sb = sandbox(t);
+    const page = await render(sb, pkg(sb));
+    assert.match(page, /<button type="button" class="theme-toggle" hidden><\/button>/);
+    const hubDir = join(sb.root, 'docs', 'design');
+    const out = join(sb.root, 'hub.html');
+    const r = await runNode(RENDER, { args: ['hub', '--dir', hubDir, '--title', 'Hub', '--out', out], cwd: sb.root, env: sb.env });
+    assert.equal(r.status, 0, r.stderr);
+    const hubHtml = readFileSync(out, 'utf8');
+    assert.match(hubHtml, /class="theme-toggle" hidden/);
+    assert.equal(scripts(hubHtml).filter((s) => s.includes('theme')).length, 2);
+  });
+
+  test('the stylesheet answers both the system setting and an explicit choice', async (t) => {
+    const sb = sandbox(t);
+    const page = await render(sb, pkg(sb));
+    assert.match(page, /@media \(prefers-color-scheme: dark\) \{ :root:not\(\[data-theme="light"\]\)/);
+    assert.match(page, /:root\[data-theme="dark"\] \{/);
+  });
+
+  test('clicking flips from the system theme and remembers the choice', async (t) => {
+    const sb = sandbox(t);
+    const page = await render(sb, pkg(sb));
+    const ui = boot(page, { systemDark: false });
+    assert.equal(ui.btn.hidden, false);
+    assert.equal(ui.attrs['data-theme'], undefined);
+    assert.equal(ui.btn.attributes['aria-label'], 'Switch to dark mode');
+    ui.click();
+    assert.equal(ui.attrs['data-theme'], 'dark');
+    assert.equal(ui.store.value, 'dark');
+    assert.equal(ui.btn.attributes['aria-label'], 'Switch to light mode');
+    ui.click();
+    assert.equal(ui.attrs['data-theme'], 'light');
+  });
+
+  test('a remembered choice applies on load and beats the system setting', async (t) => {
+    const sb = sandbox(t);
+    const ui = boot(await render(sb, pkg(sb)), { stored: 'light', systemDark: true });
+    assert.equal(ui.attrs['data-theme'], 'light');
+    assert.equal(ui.btn.attributes['aria-label'], 'Switch to dark mode');
+  });
+
+  test('blocked storage still toggles, and a junk stored value is ignored', async (t) => {
+    const sb = sandbox(t);
+    const page = await render(sb, pkg(sb));
+    const blocked = boot(page, { storageThrows: true });
+    blocked.click();
+    assert.equal(blocked.attrs['data-theme'], 'dark');
+    assert.equal(boot(page, { stored: '"><img onerror=alert(1)>' }).attrs['data-theme'], undefined);
   });
 });
 
