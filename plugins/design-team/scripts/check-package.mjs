@@ -300,7 +300,13 @@ if (docs['ux.md']) {
       const link = hasLinkCol ? col(r, 'link') : cells.find((c) => claudeLink(c)) ?? cells.find((c) => firstUrl(c)) ?? '';
       if (!claudeLink(link)) problems.push(`${name}: no published claude.ai link (got "${link || 'blank'}")`);
       else if (!primary) primary = claudeLink(link);
-      const stale = cells.find((c) => /\bstale\b/i.test(c));
+      // "stale" is a marker only in Synced to; elsewhere it can be a state's name ("stale model").
+      // A table with no Synced to column: a cell that starts with "stale", the template's form.
+      const hasSyncedCol = Object.keys(r).some((k) => k.includes('synced'));
+      const synced = col(r, 'synced');
+      let stale = '';
+      if (hasSyncedCol && /\bstale\b/i.test(synced)) stale = synced;
+      else if (!hasSyncedCol) stale = cells.find((c) => /^stale\b/i.test(c)) ?? '';
       if (stale) problems.push(`${name}: marked stale (${stale}); update it at the same link`);
     }
     // The index's Prototype row is what the review page and the hub link to; it must be the table's first row.

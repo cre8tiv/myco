@@ -100,8 +100,23 @@ function link(label, href, prefix) {
  * @returns {string}
  */
 function renderMarkdown(md, prefix) {
-  const lines = md.replace(/\r\n?/g, '\n').replace(/<!--[\s\S]*?-->/g, '').split('\n');
-  return blocks(lines, prefix);
+  const lines = md.replace(/^﻿/, '').replace(/\r\n?/g, '\n').replace(/<!--[\s\S]*?-->/g, '').split('\n');
+  return blocks(stripFrontMatter(lines), prefix);
+}
+
+/**
+ * Drops a YAML front-matter block: `---` on the first line through the next line that is
+ * exactly `---`, plus the blank lines after it. Only at the start, so a `---` rule later
+ * in a document still renders. An unclosed block is left alone.
+ * @param {string[]} lines @returns {string[]}
+ */
+function stripFrontMatter(lines) {
+  if (lines[0]?.trimEnd() !== '---') return lines;
+  const end = lines.findIndex((l, i) => i > 0 && l.trimEnd() === '---');
+  if (end < 0) return lines;
+  let i = end + 1;
+  while (i < lines.length && lines[i].trim() === '') i++;
+  return lines.slice(i);
 }
 
 /** @param {string[]} lines @param {string} prefix @returns {string} */

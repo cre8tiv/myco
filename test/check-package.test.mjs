@@ -331,10 +331,23 @@ describe('UX prototypes', () => {
     assert.match(r.stdout, /Picker flow: marked stale/);
   });
 
-  test('"stale" in any cell fails, not just Synced to', async (t) => {
-    const r = await check(t, { 'ux.md': UX(['| Picker flow | Claude Design canvas | https://claude.ai/artifact/abc (stale) | S-1 | round 1, D-3 |']) });
+  test('"stale" elsewhere in the row, such as a state named "stale model", is not a stale marker', async (t) => {
+    // Regression: a real package's Shows cell listed the S-1 dialog states, one named "stale model".
+    const row = '| Semantic Routing beta surfaces (primary) | Claude Design canvas | https://claude.ai/artifact/abc | S-1 dialog: empty, loading, stale model, error | Review round 2 … round 4, last D-decision drawn D-48 |';
+    const r = await check(t, { 'ux.md': UX([row]) });
+    assert.equal(r.status, 0, r.stdout);
+    assert.match(r.stdout, /PASS\s+Every UX prototype is published and linked from ux\.md/);
+    const marked = await check(t, { 'ux.md': UX([row.replace('Review round 2 … round 4, last D-decision drawn D-48', 'stale — synced to round 3')]) });
+    assert.equal(marked.status, 1);
+    assert.match(marked.stdout, /Semantic Routing beta surfaces \(primary\): marked stale \(stale — synced to round 3\)/);
+  });
+
+  test('a table with no Synced to column: a cell starting "stale" fails, one merely containing it does not', async (t) => {
+    const legacy = (cell) => `### Prototypes\n\n| Surface | Prototype | Notes |\n| --- | --- | --- |\n| Picker | https://claude.ai/artifact/abc | ${cell} |\n`;
+    assert.equal((await check(t, { 'ux.md': legacy('shows the stale model state') })).status, 0);
+    const r = await check(t, { 'ux.md': legacy('stale — synced to round 1') });
     assert.equal(r.status, 1);
-    assert.match(r.stdout, /Picker flow: marked stale \(https:\/\/claude\.ai\/artifact\/abc \(stale\)\)/);
+    assert.match(r.stdout, /Picker: marked stale \(stale — synced to round 1\)/);
   });
 
   test('a legacy Prototypes table with no Link column passes when its rows hold URLs', async (t) => {

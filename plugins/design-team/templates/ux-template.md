@@ -31,7 +31,7 @@ Every prototype for this package, so anyone reading `ux.md` (engineering, QA, or
 - **Kind:** Claude Design canvas, or HTML prototype.
 - **Link:** the published claude.ai link. An HTML prototype also lists its `ux/` path. A prototype that isn't published yet says "not published — `ux/<file>.html`", and the product lead publishes it before review.
 - **Shows:** the surfaces (`S-n`) and states it covers.
-- **Synced to:** the round and the last D-decision the prototype reflects. When a decision changes a surface, update the prototype at the same link and bump this; never start a new canvas for the same surfaces. A prototype that lags `ux.md` says so here: "stale — synced to round n".
+- **Synced to:** the round and the last D-decision the prototype reflects. When a decision changes a surface, update the prototype at the same link and bump this; never start a new canvas for the same surfaces. A prototype that lags `ux.md` says so here: "stale — synced to round n". "stale" is a marker only in this column; a state named "stale" in *Shows* is just a state.
 
 The first row is the package's primary prototype. The package index's **Prototype** row carries the same link, and the review page and design hub link to it from there; `check-package.mjs` fails the package when the two differ. Write N/A with a one-line reason when there are no prototypes (for example, `ux_prototypes: wireframes`).
 
