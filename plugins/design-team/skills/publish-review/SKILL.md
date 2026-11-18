@@ -52,6 +52,7 @@ Artifact links are `claude.ai/artifact/<id>`; the id can't be chosen. What makes
 8. **Tell the human:**
    - the page link, the hub link, and each prototype link;
    - that **the page and each prototype are private until they share them** from claude.ai — sharing the review page doesn't share the Claude Design canvas it links to, so a reviewer who clicks through hits an access wall — and who they might share them with: the sign-off names in `design.md`, and anyone the *What we want feedback on* questions name;
+   - that the hub must be shared with edit access to every teammate who publishes packages to it, since a view-only teammate's hub publish is refused;
    - that reviewers comment directly on the page, and that **Send to Claude** on a thread lets you reply in it;
    - to tell you when the feedback is in. Don't rely on being woken by a comment.
 
