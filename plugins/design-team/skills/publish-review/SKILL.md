@@ -59,13 +59,13 @@ Artifact links are `claude.ai/artifact/<id>`; the id can't be chosen. What makes
 
 ## Update the hub
 
-The hub lists every package in `packages_dir` with its status, owner, last update, review link and primary prototype link (from each index's **Prototype** row) — one link for the whole project's design work.
+The hub lists every package with its status, owner, last update, review link and primary prototype link (from each index's **Prototype** row) — one link for the whole project's design work. Packages are often in flight on different branches, worktrees and sessions, so no one checkout holds them all: after its first publish the hub is merged, never regenerated.
 
 ```
 node "${CLAUDE_PLUGIN_ROOT}/scripts/render-review.mjs" hub --dir <packages_dir> --title "<product_name> design packages" --out <scratchpad>/design-hub.html
 ```
 
-Publish it to `review_hub` from `design.md` (reading it first if you haven't this conversation), or, the first time, as a new artifact with `icon: "folder"` — then write its link into `design.md`'s `review_hub` and commit. Republish whenever a package's status or review link changes.
+The first time, publish that as a new artifact with `icon: "folder"`, write its link into `design.md`'s `review_hub` and commit. After that, read the live hub at `review_hub` right before publishing, change only your package's row (add it if missing), keep every other row as it is, and publish built on the version you read; if the publish is refused because a newer version is live, read it again and redo your row. Republish whenever your package's status or review link changes.
 
 ## Collect feedback
 
