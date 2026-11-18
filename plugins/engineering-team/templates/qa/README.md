@@ -12,7 +12,7 @@ should leave behind something that makes the next one cheaper.
   harnesses, migration runners, helpers. Parameterize rather than fork; a second
   harness for the same entry point is a smell.
 - `fixtures/` — seed data, saved auth state, sample payloads.
-- `runs/<YYYY-MM-DD>-<TICKET>/` — per-run evidence: `report.md` plus logs and captures.
+- `runs/<YYYY-MM-DD>-<TICKET>/` — per-run evidence: `report.md` (saved by the tech lead from the QA report) plus logs and captures.
 
 ## What is and isn't committed
 

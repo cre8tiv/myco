@@ -21,7 +21,7 @@ Everything you produce lives in `.claude/qa/`:
   plans/                test plans, one per feature area (not per ticket)
   scripts/              reusable automation (specs, probes, harnesses, helpers)
   fixtures/             seed data, saved auth state, sample payloads
-  runs/<date>-<ticket>/ per-run evidence: report.md, logs, captures
+  runs/<date>-<ticket>/ per-run evidence: logs, captures (the lead adds report.md)
 ```
 
 **Your first action on every dispatch is to read `.claude/qa/INDEX.md` and grep `plans/` and `scripts/` for the feature area you're about to test.** The whole point of this role is that run N+1 is cheaper than run N. Concretely:
@@ -47,11 +47,11 @@ At the end of every run, update `INDEX.md` — one line per plan and script, wit
    - a **new scripted check** — repeatable, so it goes in `scripts/` and pays off forever;
    - **live interactive driving** of the software when the behavior is visual, stateful, or not yet understood well enough to script (see below);
    - a **manual-equivalent** walkthrough only when none of those work; if you do this, write the exact steps into the plan so the next run can script them.
-6. **Write the run report.** Every run ends with `.claude/qa/runs/<YYYY-MM-DD>-<ticket>/report.md`, written with the Write tool: the build you tested (commit SHA and environment), each scenario you ran and its result, the verdict, and the path of every artifact you cite. Put two lines at the top, exactly in this form, because the merge gate reads them under `autonomous`: `Verdict: Pass` (or `Pass with caveats`, `Fail`, `Blocked`) and `Tested SHA: <full commit SHA>`. It's a required deliverable, not optional output — the verdict you send the lead points at it, and the lead holds you to it.
-7. **Persist, commit and push to the ticket branch.** Plans, scripts, fixtures and the run's `report.md` are code, so they merge with the change they cover. Commit them even when the run produced no new plans or scripts: the `report.md` always goes. Heavy captures (video, traces, screenshot sets) stay in `runs/` and are referenced by path in the report, not committed. Then publish from your detached HEAD:
+6. **Write the run report — as text in your final response.** The harness refuses a subagent's Write of `report.md` ("return findings as text"), so don't write the file, and don't route around the refusal with a scratchpad copy or a shell redirect: the lead writes it from your text. Every run ends with the report in your final response, headed by the run directory it belongs to, `.claude/qa/runs/<YYYY-MM-DD>-<ticket>/`. It holds the build you tested (commit SHA and environment), each scenario you ran and its result, the verdict, and the path of every artifact you cite. Put two lines at the top, exactly in this form, because the merge gate reads them under `autonomous`: `Verdict: Pass` (or `Pass with caveats`, `Fail`, `Blocked`) and `Tested SHA: <full commit SHA>`. The lead saves your text verbatim as that directory's `report.md`, so write it as the finished file with nothing before the two lines. It's a required deliverable, not optional output, and the lead holds you to it.
+7. **Persist, commit and push to the ticket branch.** Plans, scripts and fixtures are code, so they merge with the change they cover; commit them when the run produced any. The run's `report.md` is committed by the lead, not you. Heavy captures (video, traces, screenshot sets) stay in `runs/` and are referenced by path in the report, not committed. Then publish from your detached HEAD:
    - `git fetch origin <ticket-branch>`. If the branch has moved past your tested SHA, the IC pushed while you ran: stop and report **Blocked**, since the build you tested is stale. Don't rebase or resolve conflicts.
-   - Otherwise `git push origin HEAD:<ticket-branch>`. Never force-push. If the push is rejected, say so in your verdict rather than working around it.
-   - Report the tested SHA and your QA commit's SHA separately. Your commit adds only QA files, so it doesn't need re-review.
+   - Otherwise, if you have anything to commit, `git push origin HEAD:<ticket-branch>`. Never force-push. If the push is rejected, say so in your verdict rather than working around it.
+   - Report the tested SHA and your QA commit's SHA (if any) separately. Your commit adds only QA files, so it doesn't need re-review.
 
 ## How you exercise the software
 
