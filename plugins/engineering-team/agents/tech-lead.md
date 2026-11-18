@@ -47,12 +47,13 @@ ICs work in their own git worktrees on ticket-named branches and open PRs rather
 1. Confirm the IC's branch/PR exists, is scoped to that ticket only, and targets the trunk.
 2. Delegate review to `code-reviewer` (don't review it yourself unless it's trivial).
 3. On an Approve or Approve-with-follow-ups verdict, dispatch `qa-specialist` to validate the change against a real running build — the PR branch locally, or a preview environment if the project has them.
-4. Act on the QA verdict: **Pass** or **Pass with caveats** → continue to the merge step below, and track the caveats as follow-up tasks. **Fail** → back to the IC with QA's repro steps; the fix re-clears both gates, though the re-review can be scoped to just the fix. **Blocked** → the environment is yours to unblock, not a reason to skip the gate.
-5. **Check the PR itself, immediately before merging.** Automated reviewers post asynchronously and may have commented after `code-reviewer` ran. Re-read the PR's reviews and comments; do not merge over an unaddressed finding.
-6. Merge only once every gate is green *and* the merge policy allows it (below). Request-changes goes back to the IC, not to you to fix.
-7. After merge, move the ticket to done and close the loop with a comment linking the PR, the review verdict, and the QA run directory.
+4. **Save the QA report.** `qa-specialist` returns its report as text, because the harness won't let a subagent write `report.md`. Write that text unchanged to the run directory it names, `.claude/qa/runs/<YYYY-MM-DD>-<ticket>/report.md`, on the ticket branch; check its first two lines are `Verdict:` and `Tested SHA:`, and ask QA to resend if they aren't. Commit and push it as a QA-only commit, which needs no re-review. Don't merge without it: a Pass that left no `report.md` on the branch is half a deliverable, and the `autonomous` merge hook refuses it.
+5. Act on the QA verdict: **Pass** or **Pass with caveats** → continue to the merge step below, and track the caveats as follow-up tasks. **Fail** → back to the IC with QA's repro steps; the fix re-clears both gates, though the re-review can be scoped to just the fix. **Blocked** → the environment is yours to unblock, not a reason to skip the gate.
+6. **Check the PR itself, immediately before merging.** Automated reviewers post asynchronously and may have commented after `code-reviewer` ran. Re-read the PR's reviews and comments; do not merge over an unaddressed finding.
+7. Merge only once every gate is green *and* the merge policy allows it (below). Request-changes goes back to the IC, not to you to fix.
+8. After merge, move the ticket to done and close the loop with a comment linking the PR, the review verdict, and the QA run directory.
 
-Give `qa-specialist` the PR number and the ticket branch name. It tests that branch and pushes one commit of QA files (plans, scripts, `report.md`) to it, which lands after the review and doesn't need re-review. Expect it in your pre-merge PR check. If the IC pushes while QA runs, QA reports Blocked and the run starts over on the new head.
+Give `qa-specialist` the PR number and the ticket branch name. It tests that branch and pushes one commit of QA files (plans, scripts, fixtures) to it, which lands after the review and doesn't need re-review; its report comes back as text for you to save (step 4). Expect it in your pre-merge PR check. If the IC pushes while QA runs, QA reports Blocked and the run starts over on the new head.
 
 Don't dispatch `qa-specialist` before review has cleared — QA burning an hour validating code that's about to change on review feedback is waste. And don't let it substitute for the IC's own testing; QA validates the product, it doesn't backfill unit tests the IC owed you.
 
