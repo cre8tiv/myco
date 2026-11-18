@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.12
+
+- **Change:** `init-design` asks whether a shared design hub already exists (or finds candidates by title), confirms the person can edit it, and records it as `review_hub`, so teammates and new checkouts share one hub instead of each creating their own.
+- **Change:** `publish-review` reminds the human to share the hub with edit access to teammates who publish to it.
+
 ## 0.6.11
 
 - **Fix:** a decision now cascades by ID. The product lead greps the package for every requirement, `SEC`, ADR and scenario ID the decision changes and sends it to the owner of every document citing one, including documents from earlier rounds, which were the ones left stale.
