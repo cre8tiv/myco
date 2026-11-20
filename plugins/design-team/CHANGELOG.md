@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.13
+
+- **Change:** review pages explain their IDs. Each ID that the package defines (in a table row, a heading or a bold lead-in) shows its definition on hover and links to it, and a collapsed "What do codes like SC-1 and A-1 mean?" key at the top lists each prefix with its area, count and first example. An ID nothing defines renders as before.
+- **Change:** the Overview template, the `publish-review` step that writes it and the package index's handoff line now ask for plain words first and the ID after it, ranges named by what they cover, and names that can't be mistaken for IDs.
+
 ## 0.6.12
 
 - **Change:** `init-design` asks whether a shared design hub already exists (or finds candidates by title), confirms the person can edit it, and records it as `review_hub`, so teammates and new checkouts share one hub instead of each creating their own.
