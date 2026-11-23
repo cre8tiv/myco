@@ -11,7 +11,7 @@ A design package is written for engineering: precise, cross-referenced, and long
 
 ## Before you start
 
-- **You need the `Artifact` tool.** It exists only in an interactive session signed in to claude.ai. In a headless run (`claude -p`) or as a subagent you won't have it: render the page (step 4) into your scratchpad or the system temp directory, say where it is, and tell the human that publishing needs an interactive session. Don't claim you published anything.
+- **You need the `Artifact` tool.** It exists only in an interactive session signed in to claude.ai. In a headless run (`claude -p`) or as a subagent you won't have it: render the page (step 4) with `--standalone` into your scratchpad or the system temp directory, say where it is, and tell the human that publishing needs an interactive session. Don't claim you published anything.
 - **Read `.claude/team/design.md`.** `review_pages` says whether this project publishes review pages (`artifact`) or not (`none`); `product_name` goes in page titles; `review_hub` is the hub's link, once it exists.
 - **Read the package's `README.md`.** Its header table's **Review page** row holds the page's link if it has been published before, and its **Review** section records past rounds.
 
@@ -39,7 +39,7 @@ Artifact links are `claude.ai/artifact/<id>`; the id can't be chosen. What makes
    node "${CLAUDE_PLUGIN_ROOT}/scripts/render-review.mjs" package --dir <packages_dir>/<slug> --title "<title>" --round <n> --out <scratchpad>/<slug>-review.html
    ```
 
-   `<scratchpad>` is your session's scratchpad directory, or the system temp directory if you have none. Render there, not into the repository: the HTML is derived from the markdown, and a committed copy would drift from it. The script reports the file's size; it must stay under 16 MB.
+   When the page will be opened as a file rather than published (no `Artifact` tool, or `review_pages: none`), add `--standalone`: it writes a whole HTML document and draws the Mermaid diagrams itself, which the artifact host does for a published page. `<scratchpad>` is your session's scratchpad directory, or the system temp directory if you have none. Render there, not into the repository: the HTML is derived from the markdown, and a committed copy would drift from it. The script reports the file's size; it must stay under 16 MB.
 
 5. **Publish.**
    - **First time:** publish the file with the `Artifact` tool, with the title convention, a description, and `icon: "document"`.

@@ -77,6 +77,7 @@ The package is written for engineering. For people, the product lead publishes i
 - **Replies in threads.** Use **Send to Claude** on a thread to let the product lead reply and resolve it. Threads not sent to Claude stay open, and the lead tells you which ones it addressed.
 - **Private until shared.** Pages and the hub are private to whoever published them; share them from claude.ai.
 - **Light or dark.** Pages follow the reader's system setting, and a toggle in the header switches between light and dark. The choice is remembered per page in that reader's browser. Mermaid diagrams are drawn by the artifact host and may keep the scheme they were first drawn in until the page reloads.
+- **Opened as a file.** A page rendered with `--standalone` (when it isn't published) is a whole HTML document that loads one pinned, integrity-checked Mermaid build from jsdelivr to draw its diagrams. Opened offline, the diagrams show as their source.
 - **Interactive sessions only.** Publishing needs the Artifact tool, which a headless `claude -p` run doesn't have; there the page is rendered to a file and left for you to publish.
 
 Run `/publish-review` yourself to publish a draft early, to collect feedback, or to refresh the hub. `review_pages: none` in `design.md` turns review pages off.

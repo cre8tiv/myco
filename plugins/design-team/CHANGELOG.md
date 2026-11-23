@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.15
+
+- **Change:** `render-review.mjs --standalone`, for a review page opened as a file instead of published: it writes a whole HTML document (doctype, charset, viewport), and a package page with diagrams loads Mermaid 11.4.1 from jsdelivr with a Subresource Integrity hash to draw them in the page's light or dark scheme, redrawing on the toggle. Offline, or for a diagram Mermaid can't parse, the source stays. Without the flag the output is unchanged. `publish-review` uses it when it can't publish. A flag with no value no longer swallows the next argument.
+
 ## 0.6.14
 
 - **Change:** `check-package.mjs --local-prototypes` counts an HTML prototype kept in the package (a `ux/<file>.html` path that exists) as linked, for hosts that can't publish to claude.ai. Without the flag nothing changes. The UX, package index and review summary templates say a `ux/` path is the link there.
