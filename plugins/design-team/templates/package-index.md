@@ -14,7 +14,7 @@ This becomes `docs/design/<slug>/README.md`: the first file anyone opens, and th
 | **Last updated** | <date> |
 | **Adopted from** | <source link, its version or date, and when it was fetched — or "new"> |
 | **Review page** | <claude.ai artifact link, once published — or "not published"> |
-| **Prototype** | <the primary prototype's claude.ai link — the first row of `ux.md`'s Prototypes table, usually the Claude Design canvas — or "none"> |
+| **Prototype** | <the primary prototype's claude.ai link (or its `ux/` path where prototypes aren't published) — the first row of `ux.md`'s Prototypes table, usually the Claude Design canvas — or "none"> |
 
 <One paragraph: what this is and why, from the PRD's problem and positioning.>
 ```

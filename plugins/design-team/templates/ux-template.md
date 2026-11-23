@@ -29,7 +29,7 @@ Table with columns `ID | Surface | Type | Purpose | Prototype`. IDs are `S-1`, `
 Every prototype for this package, so anyone reading `ux.md` (engineering, QA, or a reviewer on the review page) can open what the UX designer built. Table with columns `Prototype | Kind | Link | Shows | Synced to`.
 
 - **Kind:** Claude Design canvas, or HTML prototype.
-- **Link:** the published claude.ai link. An HTML prototype also lists its `ux/` path. A prototype that isn't published yet says "not published — `ux/<file>.html`", and the product lead publishes it before review.
+- **Link:** the published claude.ai link. An HTML prototype also lists its `ux/` path. A prototype that isn't published yet says "not published — `ux/<file>.html`", and the product lead publishes it before review. Where prototypes can't be published (the package is checked with `check-package.mjs --local-prototypes`), the `ux/` path alone is the link.
 - **Shows:** the surfaces (`S-n`) and states it covers.
 - **Synced to:** the round and the last D-decision the prototype reflects. When a decision changes a surface, update the prototype at the same link and bump this; never start a new canvas for the same surfaces. A prototype that lags `ux.md` says so here: "stale — synced to round n". "stale" is a marker only in this column; a state named "stale" in *Shows* is just a state.
 

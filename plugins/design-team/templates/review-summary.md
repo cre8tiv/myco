@@ -19,7 +19,7 @@ One line per actor: who they are and the context that matters, with the ID after
 
 ## How it works
 
-If the package has a prototype, open with one line linking it — "**Try it:** [the prototype](<claude.ai link>), artboards per surface and state" — using the links in `ux.md`'s Prototypes table. Seeing the design is usually the fastest way in.
+If the package has a prototype, open with one line linking it — "**Try it:** [the prototype](<its link>), artboards per surface and state" — using the links in `ux.md`'s Prototypes table. Seeing the design is usually the fastest way in.
 
 The key scenarios, one short paragraph each, from the actor's point of view. Start each with what happens in words and the ID after it ("**Rotating a credential (SC-1).** The IT operations admin disables…"), and name the actor in words the first time. Link each to its UX flow and architecture flow, and to the prototype artboard that shows it, when there is one. A reader who reads only this section should be able to say what the thing does.
 

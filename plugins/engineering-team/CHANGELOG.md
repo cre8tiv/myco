@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.11
+
+- **Change:** `check-package.mjs --local-prototypes`, as in design-team 0.6.14 (this is its copy).
+
 ## 0.5.10
 
 - **Change:** the PR feedback loop. The tech lead watches a PR for bot and human feedback after review, after QA and before merge (optionally waiting on `gh event listen`), routes each new finding, and replies and resolves bot threads once fixed or declined. `project.md` gains fields for how findings appear, how to ask for a re-review, who resolves threads and the conventions bots enforce; `init-team` fills them in and checks that agents can read and resolve review threads.
