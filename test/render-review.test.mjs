@@ -191,8 +191,8 @@ describe('markdown fidelity', () => {
     assert.match(body, /<th>ID<\/th><th>Requirement<\/th><th>Phase<\/th>/);
     assert.match(body, /<code>a \\\| b<\/code>|<code>a \| b<\/code>/);
     // The short row is padded to the header's width rather than breaking the table.
-    assert.equal((body.match(/<tr><td>/g) || []).length, 2);
-    assert.match(body, /<tr><td><span class="id">APR-2<\/span><\/td><td>only two cells<\/td><td><\/td><\/tr>/);
+    assert.equal((body.match(/<tr[^>]*><td>/g) || []).length, 2);
+    assert.match(body, /<tr id="prd-id-apr-2"><td><span class="id" title="only two cells">APR-2<\/span><\/td><td>only two cells<\/td><td><\/td><\/tr>/);
   });
 
   test('task lists show done and not-done', async (t) => {
@@ -236,6 +236,68 @@ describe('design IDs', () => {
     const sb = sandbox(t);
     const body = await renderDoc(sb, 'APR-3 satisfies SEC-2 (threat T-4) per ADR-7 and D-12 for A-2.');
     for (const id of ['APR-3', 'SEC-2', 'T-4', 'ADR-7', 'D-12', 'A-2']) assert.match(body, new RegExp(`<span class="id">${id}</span>`), id);
+  });
+
+  test('an ID defined in a table shows its definition and links to its row, from any document', async (t) => {
+    const sb = sandbox(t);
+    const html = await render(sb, pkg(sb, {
+      'prd.md': ['## Actors', '', '| ID | Actor | Context |', '| --- | --- | --- |', '| A-1 | IT operations admin | Rotates credentials in the Admin UI |', '', '## Scenarios', '', '| ID | Actor | What happens |', '| --- | --- | --- |', '| SC-1 | A-1 | Rotates a Salesforce credential while disabled |'].join('\n'),
+      'tech-design.md': 'Slice S3 covers SC-1 for A-1 and also NOPE-9.',
+    }));
+    const prd = html.match(/<section class="doc" id="prd">[\s\S]*?<\/section>/)[0];
+    const tech = html.match(/<section class="doc" id="tech-design">[\s\S]*?<\/section>/)[0];
+    // The defining row carries the anchor, and its own ID doesn't link to itself.
+    assert.match(prd, /<tr id="prd-id-a-1"><td><span class="id" title="IT operations admin — Rotates credentials in the Admin UI">A-1<\/span>/);
+    // A later document's chip links to it and carries the same words, in any document.
+    assert.match(tech, /<a class="id" href="#prd-id-sc-1" title="A-1 — Rotates a Salesforce credential while disabled">SC-1<\/a>/);
+    assert.match(tech, /<a class="id" href="#prd-id-a-1" title="IT operations admin[^"]*">A-1<\/a>/);
+    // An ID nothing defines stays a plain chip.
+    assert.match(tech, /<span class="id">NOPE-9<\/span>/);
+  });
+
+  test('an ID inside a link stays a chip, because links can\'t nest', async (t) => {
+    const sb = sandbox(t);
+    const body = await renderDoc(sb, ['| ID | Requirement |', '| --- | --- |', '| CFR-76 | The request |', '', 'See [ticket CFR-76](https://example.com/CFR-76).'].join('\n'));
+    assert.match(body, /<a href="https:\/\/example\.com\/CFR-76"[^>]*>ticket <span class="id" title="The request">CFR-76<\/span><\/a>/);
+  });
+
+  test('headings and bold lead-ins define IDs too', async (t) => {
+    const sb = sandbox(t);
+    const body = await renderDoc(sb, ['### ADR-1: Put a release gate over every release point', '', '> **SC-2 — Pause for maintenance** (A-1)', '> Disable on Saturday, enable on Sunday.', '', 'Both ADR-1 and SC-2 matter.'].join('\n'));
+    assert.match(body, /<a class="id" href="#prd-adr-1-put-a-release-gate-over-every-release-point" title="Put a release gate over every release point">ADR-1<\/a>/);
+    assert.match(body, /<p id="prd-id-sc-2"><strong>.*SC-2.* — Pause for maintenance<\/strong>/);
+    assert.match(body, /<a class="id" href="#prd-id-sc-2" title="Pause for maintenance">SC-2<\/a>/);
+  });
+
+  test('a risk led into its first cell defines its ID', async (t) => {
+    const sb = sandbox(t);
+    const body = await renderDoc(sb, ['| Risk | Mitigation |', '| --- | --- |', '| **Accepted risk:** R-01: running queries finish | Log it |', '', 'See R-01.'].join('\n'));
+    assert.match(body, /<tr id="prd-id-r-01">/);
+    assert.match(body, /<a class="id" href="#prd-id-r-01" title="running queries finish">R-01<\/a>/);
+  });
+
+  test('a definition is escaped, since it comes from text people and agents edit', async (t) => {
+    const sb = sandbox(t);
+    const body = await renderDoc(sb, ['| ID | Requirement |', '| --- | --- |', '| X-1 | a "quoted" <b>bold</b> & more |', '', 'See X-1.'].join('\n'));
+    assert.match(body, /title="a &quot;quoted&quot; &lt;b&gt;bold&lt;\/b&gt; &amp; more"/);
+    assert.equal(body.includes('<b>'), false);
+  });
+
+  test('a key explains each prefix in use, naming areas from headings and falling back to the usual meaning', async (t) => {
+    const sb = sandbox(t);
+    const html = await render(sb, pkg(sb, {
+      'prd.md': ['#### Enforcement on every surface (ENF)', '', '| ID | Requirement | Actor | Priority |', '| --- | --- | --- | --- |', '| ENF-1 | Every surface refuses a disabled connection | A-3 | P0 |', '| ENF-2 | Another one | A-3 | P0 |', '', '| ID | Actor | Context |', '| --- | --- | --- |', '| A-3 | Query user | Queries from a BI tool |'].join('\n'),
+    }));
+    const key = html.match(/<details class="key">[\s\S]*?<\/details>/)[0];
+    assert.match(key, /What do codes like/);
+    assert.match(key, /<td><code>ENF-n<\/code><\/td><td>Enforcement on every surface<\/td><td>2<\/td>/);
+    assert.match(key, /<td><code>A-n<\/code><\/td><td>Actors<\/td><td>1<\/td>/);
+  });
+
+  test('there is no key when the package defines no IDs', async (t) => {
+    const sb = sandbox(t);
+    const html = await render(sb, pkg(sb, { 'prd.md': 'Plain text, and SEC-2 with no definition anywhere.' }));
+    assert.equal(html.includes('class="key"'), false);
   });
 
   test('standard names that look like IDs are left alone', async (t) => {
