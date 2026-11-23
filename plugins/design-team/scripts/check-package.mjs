@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Mechanical readiness checks for a design package.
 //
-//   node check-package.mjs <package-dir> [--json] [--ready]
+//   node check-package.mjs <package-dir> [--json] [--ready] [--local-prototypes]
 //
 // The product lead's step 7 and the engineering tech lead's "check it's ready" list
 // things that can be counted: every requirement in one phase, every P0/P1/SEC control
@@ -13,6 +13,8 @@
 // --ready also requires the index to say "Ready for engineering" with every readiness
 // box ticked, which is how the tech lead uses it; the product lead runs without it,
 // since the status and boxes are what it sets once the checks pass.
+// --local-prototypes is for hosts that can't publish to claude.ai: an HTML prototype
+// kept in the package (a `ux/<file>.html` path that exists) counts as linked.
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -20,8 +22,9 @@ const argv = process.argv.slice(2);
 const dir = argv.find((a) => !a.startsWith('--'));
 const asJson = argv.includes('--json');
 const ready = argv.includes('--ready');
+const localPrototypes = argv.includes('--local-prototypes');
 if (!dir || !existsSync(join(dir, 'README.md'))) {
-  console.error('usage: check-package.mjs <package-dir> [--json] [--ready]\nThe directory must hold the package index, README.md.');
+  console.error('usage: check-package.mjs <package-dir> [--json] [--ready] [--local-prototypes]\nThe directory must hold the package index, README.md.');
   process.exit(2);
 }
 
@@ -108,6 +111,16 @@ const firstUrl = (s) => (s || '').match(/https?:\/\/[^\s)>\]|]+/)?.[0] ?? '';
  * @param {string | undefined} s @returns {string}
  */
 const claudeLink = (s) => (s || '').match(/https:\/\/claude\.ai\/[^\s)>\]|]+/)?.[0] ?? '';
+
+/** The first `ux/<file>.html` path in text, or ''. @param {string | undefined} s @returns {string} */
+const uxPath = (s) => (s || '').match(/\bux\/[^\s`)>\]|]+\.html\b/)?.[0] ?? '';
+
+/**
+ * Where a prototype row points: its claude.ai link or, under --local-prototypes, a `ux/` file
+ * that exists in the package. '' when it points nowhere that counts.
+ * @param {string} s @returns {string}
+ */
+const prototypeTarget = (s) => claudeLink(s) || (localPrototypes && uxPath(s) && existsSync(join(dir, uxPath(s))) ? uxPath(s) : '');
 
 /**
  * IDs in text, with ranges like `COL-1–COL-3` or `COL-1..3` expanded.
@@ -287,7 +300,7 @@ const advice = [];
 if (docs['ux.md']) {
   const body = section(docs['ux.md'], /^(\d+\.\s*)?prototypes\b/i);
   if (body === null) {
-    advice.push('ux.md has no Prototypes section; list each prototype with its claude.ai link there, or mark it N/A with a reason');
+    advice.push(`ux.md has no Prototypes section; list each prototype with its ${localPrototypes ? 'ux/ path' : 'claude.ai link'} there, or mark it N/A with a reason`);
   } else {
     const problems = [];
     let primary = '';
@@ -297,9 +310,12 @@ if (docs['ux.md']) {
       const name = cells[0] || '(row)';
       // A table written before the Link column existed: look for the link in any cell.
       const hasLinkCol = Object.keys(r).some((k) => k.includes('link'));
-      const link = hasLinkCol ? col(r, 'link') : cells.find((c) => claudeLink(c)) ?? cells.find((c) => firstUrl(c)) ?? '';
-      if (!claudeLink(link)) problems.push(`${name}: no published claude.ai link (got "${link || 'blank'}")`);
-      else if (!primary) primary = claudeLink(link);
+      const link = hasLinkCol ? col(r, 'link') : cells.find((c) => prototypeTarget(c)) ?? cells.find((c) => firstUrl(c)) ?? '';
+      const target = prototypeTarget(link);
+      if (!target) {
+        const path = localPrototypes && uxPath(link);
+        problems.push(path ? `${name}: ${path} is not in the package` : `${name}: no ${localPrototypes ? 'claude.ai link or ux/ path' : 'published claude.ai link'} (got "${link || 'blank'}")`);
+      } else if (!primary) primary = target;
       // "stale" is a marker only in Synced to; elsewhere it can be a state's name ("stale model").
       // A table with no Synced to column: a cell that starts with "stale", the template's form.
       const hasSyncedCol = Object.keys(r).some((k) => k.includes('synced'));
@@ -311,12 +327,13 @@ if (docs['ux.md']) {
     }
     // The index's Prototype row is what the review page and the hub link to; it must be the table's first row.
     const indexRow = index.match(/^\s*\|\s*\*{0,2}Prototype\*{0,2}\s*\|\s*(.*?)\s*\|/im);
-    if (primary && indexRow && firstUrl(indexRow[1]) !== primary) {
-      problems.push(`README.md's Prototype row (${firstUrl(indexRow[1]) || indexRow[1] || 'blank'}) is not ux.md's primary prototype (${primary})`);
+    const indexTarget = indexRow ? firstUrl(indexRow[1]) || (localPrototypes ? uxPath(indexRow[1]) : '') : '';
+    if (primary && indexRow && indexTarget !== primary) {
+      problems.push(`README.md's Prototype row (${indexTarget || indexRow[1] || 'blank'}) is not ux.md's primary prototype (${primary})`);
     } else if (primary && !indexRow) {
       advice.push(`README.md has no Prototype row; add one with ux.md's primary prototype (${primary}) so the review page and hub link it`);
     }
-    record('Every UX prototype is published and linked from ux.md', problems);
+    record(localPrototypes ? 'Every UX prototype is in the package and linked from ux.md' : 'Every UX prototype is published and linked from ux.md', problems);
   }
 }
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.14
+
+- **Change:** `check-package.mjs --local-prototypes` counts an HTML prototype kept in the package (a `ux/<file>.html` path that exists) as linked, for hosts that can't publish to claude.ai. Without the flag nothing changes. The UX, package index and review summary templates say a `ux/` path is the link there.
+
 ## 0.6.13
 
 - **Change:** review pages explain their IDs. Each ID that the package defines (in a table row, a heading or a bold lead-in) shows its definition on hover and links to it, and a collapsed "What do codes like SC-1 and A-1 mean?" key at the top lists each prefix with its area, count and first example. An ID nothing defines renders as before.

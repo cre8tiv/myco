@@ -4,7 +4,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { sandbox, runNode, script } from './helpers.mjs';
 
 const CHECK = script('design-team', 'check-package.mjs');
@@ -135,7 +135,10 @@ async function check(t, over = {}, extra = []) {
   const sb = sandbox(t);
   const dir = join(sb.root, 'pkg');
   mkdirSync(dir);
-  for (const [name, text] of Object.entries({ ...GOOD, ...over })) writeFileSync(join(dir, name), text);
+  for (const [name, text] of Object.entries({ ...GOOD, ...over })) {
+    mkdirSync(dirname(join(dir, name)), { recursive: true });
+    writeFileSync(join(dir, name), text);
+  }
   return runNode(CHECK, { args: [dir, ...extra] });
 }
 const edit = (text, from, to) => {
@@ -323,6 +326,31 @@ describe('UX prototypes', () => {
     assert.match(r.stdout, /Settings: no published claude\.ai link \(got "not published — `ux\/settings\.html`"\)/);
     assert.match(r.stdout, /Empty: no published claude\.ai link \(got "blank"\)/);
     assert.doesNotMatch(r.stdout, /Picker flow:/);
+  });
+
+  test('--local-prototypes: a ux/ file in the package counts as linked; a missing one is named', async (t) => {
+    const SETTINGS = '| Settings | HTML prototype | `ux/settings.html` | S-3 | round 2 |';
+    const ok = await check(t, { 'ux.md': UX([CANVAS, SETTINGS]), 'ux/settings.html': '<!doctype html>' }, ['--local-prototypes']);
+    assert.equal(ok.status, 0, ok.stdout);
+    assert.match(ok.stdout, /PASS\s+Every UX prototype is in the package and linked from ux\.md/);
+    const missing = await check(t, { 'ux.md': UX([SETTINGS, '| Empty | HTML prototype | | S-4 | round 1 |']) }, ['--local-prototypes']);
+    assert.equal(missing.status, 1);
+    assert.match(missing.stdout, /Settings: ux\/settings\.html is not in the package/);
+    assert.match(missing.stdout, /Empty: no claude\.ai link or ux\/ path \(got "blank"\)/);
+  });
+
+  test('without --local-prototypes a ux/ file is not published, even when it exists', async (t) => {
+    const r = await check(t, { 'ux.md': UX(['| Settings | HTML prototype | `ux/settings.html` | S-3 | round 2 |']), 'ux/settings.html': '<!doctype html>' });
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /Settings: no published claude\.ai link/);
+  });
+
+  test('--local-prototypes: the index Prototype row must name the primary ux/ path', async (t) => {
+    const ux = UX(['| Picker flow | HTML prototype | `ux/picker.html` | S-1 | round 2 |']);
+    const withRow = (cell) => ({ 'ux.md': ux, 'ux/picker.html': '<!doctype html>', 'README.md': INDEX.replace('| **Owner** | Sam |', `| **Owner** | Sam |\n| **Prototype** | ${cell} |`) });
+    assert.equal((await check(t, withRow('`ux/picker.html`'), ['--local-prototypes'])).status, 0);
+    const other = await check(t, withRow('`ux/old.html`'), ['--local-prototypes']);
+    assert.match(other.stdout, /README\.md's Prototype row \(ux\/old\.html\) is not ux\.md's primary prototype \(ux\/picker\.html\)/);
   });
 
   test('a prototype marked stale fails', async (t) => {
