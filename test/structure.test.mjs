@@ -138,10 +138,12 @@ describe('agents', () => {
   });
 
   test('read-only roles cannot edit', () => {
-    for (const p of ['engineering-team/agents/code-reviewer.md', 'team-ops/agents/agent-coach.md']) {
+    for (const p of ['engineering-team/agents/code-reviewer.md', 'team-ops/agents/agent-coach.md', 'design-team/agents/package-auditor.md']) {
       assert.match(frontmatter(read(join(PLUGINS_DIR, p))).disallowedTools, /Edit/, p);
     }
-    assert.match(frontmatter(read(join(PLUGINS_DIR, 'engineering-team/agents/code-reviewer.md'))).disallowedTools, /Write/);
+    for (const p of ['engineering-team/agents/code-reviewer.md', 'design-team/agents/package-auditor.md']) {
+      assert.match(frontmatter(read(join(PLUGINS_DIR, p))).disallowedTools, /Write/, p);
+    }
   });
 });
 

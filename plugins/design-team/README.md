@@ -9,6 +9,7 @@ Takes an idea — or an existing PRD or spec — to a decided **design package**
 | `ux-designer` | `ux.md`, prototypes under `ux/` | Dispatched when there's a user-facing surface; alongside the architect. |
 | `security-reviewer` | `security-review.md` | Dispatched once the architecture exists. |
 | `tech-designer` | `tech-design.md` | Dispatched once architecture and security review exist. |
+| `package-auditor` | nothing: returns a report | Read-only. Dispatched with a commit SHA once the documents exist, to find where they disagree; re-run until clean. |
 
 Plus one skill, `/init-design`, which profiles where this project's design work lives and goes.
 
