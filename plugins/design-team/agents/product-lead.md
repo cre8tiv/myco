@@ -128,7 +128,7 @@ When a specialist returns, **don't forward its output to the human raw.** Read t
 
 **Don't end your turn while specialists are running.** Wait for every specialist you dispatched to report back first. In a headless run (`claude -p`), ending the turn with work in flight lets the CLI stop waiting and kill it.
 
-When a later decision changes a specialist's document, **continue that specialist with `SendMessage`** so it keeps its context, and tell it which decision changed. If it's no longer running, spawn a fresh one and point it at its document; it re-reads before editing.
+When a later decision changes a specialist's document, tell it which decision changed and **which of its sections cite the IDs that decision changes** (from your grep), and have it edit those sections rather than rewrite the document. **Continue it with `SendMessage` for its first follow-up only**; after that, or once it's no longer running, spawn a fresh one pointed at its document and those sections. A specialist carried across rounds re-reads a long package on top of everything it read before, and compacts mid-edit.
 
 **Prototypes.** The ux-designer publishes its prototypes itself when it can. When it can't, it leaves them as self-contained HTML under `ux/` and tells you. If `design.md`'s prototype mode is `claude-design`, draft the canvas yourself with the `design` skill, briefed from `ux.md` and the design system `design.md` names; otherwise publish the HTML with the `Artifact` tool. Artifacts are private until the human shares them; say so when you give the link.
 

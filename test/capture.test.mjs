@@ -92,6 +92,21 @@ describe('capture.mjs: hook events', () => {
     assert.equal(e.report, 'Wrote security-review.md with 9 controls and 2 open questions.');
   });
 
+  test("drops a SubagentStop with no subagent metadata: it is one of Claude Code's own helpers", async (t) => {
+    // A prompt suggestion, compaction summary or recap ends with an agent_id of its own and
+    // the session's agent_type. Logged as the lead, its text would read as the lead's report.
+    const sb = project(t);
+    await runHook(CAPTURE, {
+      hook_event_name: 'SubagentStop',
+      agent_type: 'design-team:product-lead',
+      agent_id: 'helper1',
+      session_id: 's9',
+      cwd: sb.project,
+      last_assistant_message: 'ok, wait for the specialists',
+    }, { env: sb.env });
+    assert.equal(existsSync(opsFile(sb.home, 'alpha-stream', 'events.jsonl')), false);
+  });
+
   test('long fields are truncated, so one runaway error cannot bloat the log', async (t) => {
     const sb = project(t);
     await runHook(CAPTURE, {

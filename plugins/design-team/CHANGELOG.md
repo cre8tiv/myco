@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.17
+
+- **Fix:** the tech designer opens every code claim it makes (`file:line`, enum or migration value, route list, "not changed" component) at the recorded commit, and states a rule instead of pinning a value the trunk allocates. Five of the nine problems engineering sent back on one package were claims about existing code that nobody had checked, and the package auditor can't catch them because it only compares documents with each other.
+- **Change:** the product-lead hands a specialist only the sections that cite a decision's IDs, to edit instead of rewrite, and continues a specialist with `SendMessage` for its first follow-up only. Specialists carried across rounds compacted mid-edit in 11 of 15 runs, against 1 of 6 dispatched once.
+
 ## 0.6.16
 
 - **Change:** a `package-auditor` agent for the documents-agree check, instead of a `general-purpose` agent briefed by hand. It cannot edit (no Edit or Write), reads every document at a commit SHA it is given so edits during a pass don't move what it audits, runs on an explicit model (Opus), and reports each disagreement in one shape: file:line on both sides, the supporting D-entry, the owner. The product-lead commits, dispatches it with the SHA and re-runs it at the new SHA until clean.

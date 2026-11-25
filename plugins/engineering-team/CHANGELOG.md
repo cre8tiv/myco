@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.13
+
+- **Fix:** isolated agents run each `git` command as its own Bash call and edit files only with Write and Edit, never a `python3 - <<EOF` script. In the first week of engineering use, the worktree guard caused 122 of 293 tool failures, from chained git commands and script edits that the old wording ("no heredocs") didn't cover. Applies to the IC, QA and tech-lead agents through the shared `no-heredocs` block, even when the user's own instructions say to batch commands.
+
 ## 0.5.12
 
 - **Change:** PR descriptions and ticket text are written for a human reviewer who never read the design package. New `templates/pr-description.md` (summary with an example, why, before/after table, a *How to read this PR* size table for large PRs, rollout, testing with verified numbers only, merge order, design IDs only in the last line, plus the ticket description and validation-field forms). ICs use it and rewrite the whole body after every push instead of appending a review changelog.
