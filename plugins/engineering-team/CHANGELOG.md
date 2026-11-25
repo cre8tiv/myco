@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.14
+
+- **Change:** the QA library's location is configurable. `project.md` gains `qa_dir` (repository-relative, default `.claude/qa`, so existing projects change nothing). The merge gate, `qa-specialist`, the tech lead, the PR template and `agent-coach` read it instead of a fixed path, and `/init-team` asks where the library should live and scaffolds it there. A value that is absolute or contains `..` is treated as unset, because the gate passes it to git. `/init-team` never moves an existing library: moving one is two steps for the user, `git mv` and setting `qa_dir`.
+
 ## 0.5.13
 
 - **Fix:** isolated agents run each `git` command as its own Bash call and edit files only with Write and Edit, never a `python3 - <<EOF` script. In the first week of engineering use, the worktree guard caused 122 of 293 tool failures, from chained git commands and script edits that the old wording ("no heredocs") didn't cover. Applies to the IC, QA and tech-lead agents through the shared `no-heredocs` block, even when the user's own instructions say to batch commands.

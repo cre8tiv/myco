@@ -269,7 +269,7 @@ describe('merge_policy: autonomous requires a passing QA run', () => {
    * A project cloned from an origin, with a feature branch `feat/x` pushed to it.
    * @param {ReturnType<typeof sandbox>} sb
    */
-  function repo(sb) {
+  function repo(sb, { qaDir = '.claude/qa', profile = {} } = {}) {
     const origin = join(sb.root, 'origin.git');
     mkdirSync(origin);
     git(origin, 'init', '-q', '--bare', '-b', 'main');
@@ -284,14 +284,14 @@ describe('merge_policy: autonomous requires a passing QA run', () => {
     git(sb.project, 'commit', '-q', '-am', 'change');
     const ghStub = join(sb.root, 'gh-stub.mjs');
     writeFileSync(ghStub, "if (process.argv.includes('99')) process.exit(1);\nconsole.log(JSON.stringify({ headRefName: 'feat/x' }));\n");
-    writeProfile(sb.project, { merge_policy: 'autonomous' });
+    writeProfile(sb.project, { merge_policy: 'autonomous', ...profile });
     const push = () => git(sb.project, 'push', '-q', 'origin', 'feat/x');
     /** Commits a QA report, as the qa-specialist does, and pushes. */
     const qaReport = (dir, lines, { sha = git(sb.project, 'rev-parse', 'HEAD') } = {}) => {
-      mkdirSync(join(sb.project, '.claude', 'qa', 'runs', dir), { recursive: true });
+      mkdirSync(join(sb.project, qaDir, 'runs', dir), { recursive: true });
       const body = lines.map((l) => l.replace('<sha>', sha)).join('\n') + '\n';
-      writeFileSync(join(sb.project, '.claude', 'qa', 'runs', dir, 'report.md'), body);
-      git(sb.project, 'add', '.claude/qa');
+      writeFileSync(join(sb.project, qaDir, 'runs', dir, 'report.md'), body);
+      git(sb.project, 'add', qaDir);
       git(sb.project, 'commit', '-q', '-m', `qa ${dir}`);
       push();
     };
@@ -354,6 +354,43 @@ describe('merge_policy: autonomous requires a passing QA run', () => {
     const out = await run(sb, r, 'gh pr merge 42');
     assert.equal(out.status, 2);
     assert.match(out.stderr, /Tested SHA/);
+  });
+
+  test('a report under the project\'s qa_dir is the one the gate reads', async (t) => {
+    const sb = sandbox(t);
+    const r = repo(sb, { qaDir: 'tests/qa', profile: { qa_dir: 'tests/qa' } });
+    r.qaReport('2026-10-12-X-1', PASS);
+    assert.equal((await run(sb, r, 'gh pr merge 42 --squash')).status, 0);
+  });
+
+  test('with qa_dir set, a report left in the default directory is not found, and says where it looked', async (t) => {
+    const sb = sandbox(t);
+    const r = repo(sb, { qaDir: '.claude/qa', profile: { qa_dir: 'tests/qa' } });
+    r.qaReport('2026-10-12-X-1', PASS);
+    const out = await run(sb, r, 'gh pr merge 42');
+    assert.equal(out.status, 2);
+    assert.match(out.stderr, /no QA run report under tests\/qa\/runs\//);
+  });
+
+  test('QA files under a custom qa_dir committed after the tested SHA do not make it stale', async (t) => {
+    const sb = sandbox(t);
+    const r = repo(sb, { qaDir: 'tests/qa', profile: { qa_dir: 'tests/qa/' } });
+    r.qaReport('2026-10-12-X-1', PASS);
+    mkdirSync(join(sb.project, 'tests', 'qa', 'scripts'), { recursive: true });
+    writeFileSync(join(sb.project, 'tests', 'qa', 'scripts', 'smoke.sh'), 'echo ok\n');
+    git(sb.project, 'add', 'tests/qa');
+    git(sb.project, 'commit', '-q', '-m', 'qa script');
+    r.push();
+    assert.equal((await run(sb, r, 'gh pr merge 42')).status, 0);
+  });
+
+  test('an absolute qa_dir, or one that climbs out of the repository, falls back to the default', async (t) => {
+    for (const bad of ['/etc/qa', '../elsewhere', 'a/../../b', 'C:/qa']) {
+      const sb = sandbox(t);
+      const r = repo(sb, { qaDir: '.claude/qa', profile: { qa_dir: bad } });
+      r.qaReport('2026-10-12-X-1', PASS);
+      assert.equal((await run(sb, r, 'gh pr merge 42')).status, 0, bad);
+    }
   });
 
   test('code pushed after QA tested it makes the Pass stale', async (t) => {

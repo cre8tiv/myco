@@ -30,7 +30,7 @@ Every agent reads it on dispatch. Agent definitions are installed plugin content
 `/init-team` also records the documentation, knowledge sources and other codebases agents should consult — API references, internal engineering docs, knowledge bases, the SDKs and services this repository builds against — in `.claude/team/knowledge.md`, shared with the design team, and scaffolds the QA library the `qa-specialist` builds up over time:
 
 ```
-.claude/qa/                  <- plans, scripts, fixtures, run evidence
+.claude/qa/                  <- plans, scripts, fixtures, run evidence (or `qa_dir` in project.md)
 ```
 
 ## Starting from a design package

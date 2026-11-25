@@ -186,7 +186,7 @@ tech-lead  ----------------------------------------------+   owns the plan, deco
 
 **A human merges by default.** `merge_policy: human-approval` means the team implements, reviews, validates and prepares the merge, then stops and notifies you — and a hook blocks agents from merging, so it isn't merely instructed. Set `autonomous` per project to let the team merge itself. `/init-team` asks every time.
 
-**Two things compound.** `qa-specialist` persists every test plan, script and fixture into `.claude/qa/` and reads that library before writing anything — so run N+1 is cheaper than run N. `agent-coach` reads captured telemetry about how the team actually worked and proposes edits to the team's own definitions, so the process itself improves instead of just the code.
+**Two things compound.** `qa-specialist` persists every test plan, script and fixture into the project's QA directory (`.claude/qa/` by default, `qa_dir` in `project.md` to change it) and reads that library before writing anything — so run N+1 is cheaper than run N. `agent-coach` reads captured telemetry about how the team actually worked and proposes edits to the team's own definitions, so the process itself improves instead of just the code.
 
 ## What your project owns
 
@@ -206,8 +206,8 @@ Everything your project owns, all written by the setup skills:
 | ---- | ---------- | --- |
 | `.claude/team/project.md`, `design.md` | Yes | Each team's profile |
 | `.claude/team/knowledge.md` | Yes | Docs, knowledge sources and other codebases every team consults, and what each answers |
-| `.claude/qa/plans`, `scripts`, `fixtures` | Yes | Project assets; merge with the change they cover |
-| `.claude/qa/runs/**` captures | No | Heavy; referenced by path from run reports |
+| QA directory: `plans`, `scripts`, `fixtures` (default `.claude/qa/`) | Yes | Project assets; merge with the change they cover |
+| QA directory: `runs/**` captures | No | Heavy; referenced by path from run reports |
 | `.claude/ops/reports/*.md` | Yes | The durable artifact; history enables attribution |
 | `~/.claude/ops/<stream>/*.jsonl` | No (outside repo) | Machine-local telemetry, contains command lines |
 

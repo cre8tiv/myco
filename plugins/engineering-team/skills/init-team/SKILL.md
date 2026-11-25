@@ -40,6 +40,7 @@ Use `AskUserQuestion` for what you couldn't infer, batching related questions. R
 - **Ephemeral/preview environments** — do they exist, how is one created, how is one reset? If the project has a skill or script for this, name it.
 - **Workflow state names**, if the tracker exposes several and the mapping isn't obvious.
 - **Writing style for PR and ticket text**, only if the team has a house standard (a controlled language such as ASD-STE100, a length limit, a required template). Otherwise leave the default: plain short sentences.
+- **Where the QA library lives** (`qa_dir`). Default `.claude/qa`. Offer another repository-relative directory when the project has a convention (an existing `qa/`, `e2e/` or `tests/qa/`), or when `.claude/` is protected, ignored or reviewed differently here, since QA agents write plans, fixtures and run evidence there constantly. Reject an absolute path or one containing `..`: the merge gate passes it to git and treats such a value as unset. If the project already has a library at another location, don't move it: say that moving it is two steps for the user, `git mv` the directory and set `qa_dir`, and leave the existing files alone. Record the answer as `qa_dir` in `project.md`'s front matter.
 - **The stream slug** — propose the repo name; it only needs confirming.
 - **How many agents may run at once** (`max_parallel_agents`). Each parallel IC or QA run is a git worktree with its own dependency install and test run. Check the machine's memory and how heavy one install-and-test cycle is in this project, and propose a number; 3 is a safe default for a typical project on a 32 GB machine.
 - **Prerequisites to run locally** that aren't in the repo: required services, env vars, seed data, credentials. Ask what's needed, never for the secret values themselves.
@@ -86,16 +87,18 @@ Copy `${CLAUDE_PLUGIN_ROOT}/templates/team/project.md` to `.claude/team/project.
 
 ## 5. Scaffold the directories
 
+Use the directory settled in section 3 (`qa_dir`, `.claude/qa` by default):
+
 ```sh
-mkdir -p .claude/qa
-cp -r "${CLAUDE_PLUGIN_ROOT}/templates/qa/." .claude/qa/
+mkdir -p <qa_dir>
+cp -r "${CLAUDE_PLUGIN_ROOT}/templates/qa/." <qa_dir>/
 ```
 
-Don't overwrite an existing `.claude/qa/INDEX.md` or any accumulated plans or scripts — those are the project's own assets. (`agent-coach`'s reports directory is created by `team-ops` on first use; nothing to scaffold here.) On a refresh, add only what's missing.
+Don't overwrite an existing `<qa_dir>/INDEX.md` or any accumulated plans or scripts — those are the project's own assets. (`agent-coach`'s reports directory is created by `team-ops` on first use; nothing to scaffold here.) On a refresh, add only what's missing.
 
 Then make sure the project's `.gitignore` keeps the heavy and machine-local things out while keeping the assets in:
 
-- `.claude/qa/runs/**` binary captures (the templated `runs/.gitignore` already handles this)
+- `<qa_dir>/runs/**` binary captures (the templated `runs/.gitignore` already handles this)
 - nothing else needs ignoring — the event stream lives outside the repo, under `~/.claude/ops/<stream>/`
 
 ## 6. Browser automation, only if it applies
@@ -113,7 +116,7 @@ If and only if the project has a web surface, add a Playwright MCP server to the
         "--headless",
         "--ignore-https-errors",
         "--viewport-size", "1280x800",
-        "--output-dir", ".claude/qa/runs/_artifacts"
+        "--output-dir", "<qa_dir>/runs/_artifacts"
       ]
     }
   }
@@ -143,7 +146,7 @@ Then tell the user, briefly:
 
 1. **What you detected and what you asked** — so they can spot a wrong inference.
 2. **Which commands you verified by running** vs. took on trust.
-3. **What to commit**: `.claude/team/project.md`, `.claude/team/knowledge.md`, the `.claude/qa/` scaffold, and `.mcp.json` if you touched it.
+3. **What to commit**: `.claude/team/project.md`, `.claude/team/knowledge.md`, the QA directory scaffold, and `.mcp.json` if you touched it.
 4. **The next step** — one concrete action, not a menu (see below). Mention that `agent-coach` is for later: after a week or a batch of tickets, since it needs traffic before its three-occurrence threshold means anything.
 5. **The merge policy in plain words** — "agents will/won't merge without you, and here's how you'll be told" — plus the verified gate result.
 6. **Anything you deliberately left blank** and what would fill it in.

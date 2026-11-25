@@ -160,18 +160,28 @@ const git = (cwd, ...args) => run('git', args, cwd);
 const gh = (cwd, args) => (process.env.MERGE_GATE_GH ? run(process.execPath, [process.env.MERGE_GATE_GH, ...args], cwd) : run('gh', args, cwd));
 
 // Why this PR may not merge yet, or null when its QA report is a Pass for the code being
-// merged. The report is the latest .claude/qa/runs/*/report.md on the PR's branch, with
+// merged. The report is the latest <qa_dir>/runs/*/report.md (default .claude/qa) on the PR's branch, with
 // "Verdict:" and "Tested SHA:" lines. Anything that stops the check from running at all
 // (no gh, offline, unknown branch) throws, and the caller lets the merge through: a
 // broken gate must never block legitimate work.
+// The directory QA artifacts live in: `qa_dir` in project.md, repo-relative. It is passed to
+// git, so an absolute path or one that climbs out of the repository counts as unset.
+const DEFAULT_QA_DIR = '.claude/qa';
+function qaDir(cwd) {
+  const v = String(profileKey(cwd, 'qa_dir', DEFAULT_QA_DIR) || '').trim().replace(/\\/g, '/').replace(/^(\.\/)+/, '').replace(/\/+$/, '');
+  if (!v || v.startsWith('/') || /^[A-Za-z]:/.test(v) || v.split('/').some((s) => s === '..' || s === '.' || s === '')) return DEFAULT_QA_DIR;
+  return v;
+}
+
 function qaCheck(cwd, pr) {
+  const qa = qaDir(cwd);
   const branch = JSON.parse(gh(cwd, ['pr', 'view', ...pr, '--json', 'headRefName'])).headRefName;
   if (!branch) throw new Error('no head branch');
   try { git(cwd, 'fetch', '-q', 'origin', branch); } catch { /* use what is already fetched */ }
   const ref = `origin/${branch}`;
   git(cwd, 'rev-parse', '--verify', '-q', ref);
-  const reports = git(cwd, 'ls-tree', '-r', '--name-only', ref, '--', '.claude/qa/runs').split(/\r?\n/).filter((f) => /\/report\.md$/.test(f));
-  if (!reports.length) return `${branch} has no QA run report under .claude/qa/runs/`;
+  const reports = git(cwd, 'ls-tree', '-r', '--name-only', ref, '--', `${qa}/runs`).split(/\r?\n/).filter((f) => /\/report\.md$/.test(f));
+  if (!reports.length) return `${branch} has no QA run report under ${qa}/runs/`;
   const latest = reports.sort().pop();
   const report = git(cwd, 'show', `${ref}:${latest}`);
   const verdict = (report.match(/^\W*Verdict\W*:\W*([A-Za-z][^\r\n]*)/im) || [])[1]?.trim();
@@ -184,7 +194,7 @@ function qaCheck(cwd, pr) {
   } catch {
     return `${latest}'s tested SHA ${sha} is not in ${branch}'s history`;
   }
-  const code = changed.filter((f) => !f.startsWith('.claude/qa/'));
+  const code = changed.filter((f) => !f.startsWith(`${qa}/`));
   if (code.length) return `${branch} changed after QA tested ${sha.slice(0, 7)} (${code.slice(0, 3).join(', ')}${code.length > 3 ? ', ...' : ''}); QA must re-run`;
   return null;
 }

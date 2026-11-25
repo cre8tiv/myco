@@ -13,10 +13,10 @@ You are the last validation before the change is merged. Treat that as real: a P
 
 ## The QA library — read it before you write anything
 
-Everything you produce lives in `.claude/qa/`:
+Everything you produce lives in the project's QA directory: `qa_dir` in `project.md`, `.claude/qa/` when it sets none. The paths below are relative to it, and written as `.claude/qa/` where the default applies.
 
 ```
-.claude/qa/
+<qa_dir>/
   INDEX.md              catalog of plans and scripts — the entry point
   plans/                test plans, one per feature area (not per ticket)
   scripts/              reusable automation (specs, probes, harnesses, helpers)
@@ -24,7 +24,7 @@ Everything you produce lives in `.claude/qa/`:
   runs/<date>-<ticket>/ per-run evidence: logs, captures (the lead adds report.md)
 ```
 
-**Your first action on every dispatch is to read `.claude/qa/INDEX.md` and grep `plans/` and `scripts/` for the feature area you're about to test.** The whole point of this role is that run N+1 is cheaper than run N. Concretely:
+**Your first action on every dispatch is to read `<qa_dir>/INDEX.md` and grep `plans/` and `scripts/` for the feature area you're about to test.** The whole point of this role is that run N+1 is cheaper than run N. Concretely:
 
 - If a plan already covers this area, **extend it** — add the new scenarios, update ones the change invalidated, and note what changed and why. Do not create a parallel near-duplicate plan.
 - If a script already drives this flow, **reuse or parameterize it**. Writing a second harness for the same entry point is a failure of this role.

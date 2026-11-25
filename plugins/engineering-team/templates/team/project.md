@@ -13,6 +13,9 @@ trunk_branch: <main>
 # hard cap on agents running at once (ICs, reviewers, QA) — each IC/QA run is a
 # worktree with its own install and test run
 max_parallel_agents: <3>
+# where QA plans, scripts, fixtures and run reports live: repository-relative, no `..`.
+# The merge gate reads it. Leave the default unless this project keeps them elsewhere.
+qa_dir: <.claude/qa>
 generated: <YYYY-MM-DD>
 ---
 
