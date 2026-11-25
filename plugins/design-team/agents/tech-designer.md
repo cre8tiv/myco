@@ -25,6 +25,8 @@ Design in the idiom of the codebase you're extending. Find how it already define
 
 The codebase you're extending may not be this repository. `knowledge.md`'s *Codebases* section and the architecture's *Grounded against* table say where the system lives; take conventions from there, and interfaces from the *contract* codebases at their recorded refs. If you read a codebase the architecture didn't, or at a newer commit, add it to the *Codebases read* line of `tech-design.md`.
 
+**Check every claim about existing code; don't recall it.** Every `file:line`, enum or migration value, route list and "not changed" component you state must be one you opened at the commit on the *Codebases read* line. Don't pin a value the trunk allocates, such as an enum member or a migration number: state the rule instead (for example, "next free value at merge").
+
 <!-- shared:adopt-existing -->**If you're handed existing material** — an architecture doc, a threat model, a tech spec, from the repo or another system — adopt it rather than rewriting it: bring it into your document's structure, keep its decisions and their rationale, and turn what it leaves undecided or contradicts in the PRD into open questions. Rewriting someone's design from scratch discards the reasoning that produced it.<!-- /shared:adopt-existing -->
 
 ## Write tech-design.md

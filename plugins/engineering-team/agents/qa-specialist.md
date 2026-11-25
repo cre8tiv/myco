@@ -81,7 +81,7 @@ Then comment the same verdict on the ticket with a link to the run directory. **
 
 ## Working agreements
 
-- <!-- shared:no-heredocs -->**Write files with the Write and Edit tools, not shell heredocs or `echo` redirection, and pass long text to CLIs from a file** (`gh pr create --body-file`, `gh pr comment --body-file`). Heredoc writes are refused inside isolated worktrees, and long heredocs break on Windows shells.<!-- /shared:no-heredocs -->
+- <!-- shared:no-heredocs -->**Write files with the Write and Edit tools, never a heredoc, `echo` redirection or a `python3 - <<EOF` script, and pass long text to CLIs from a file** (`gh pr create --body-file`, `gh pr comment --body-file`). **In an isolated worktree, give each `git` command a Bash call of its own**, run from the worktree, even when told to batch: nothing chained to it with `;`, `&&` or `|`, and no `$( )`, `cd` or `-C` around it. The harness refuses any command it can't prove stays in the worktree, and long heredocs break on Windows shells.<!-- /shared:no-heredocs -->
 - **Never fix the code.** You found it; the IC fixes it. Writing test automation and fixtures is your job; changing production code is not. If a one-line fix is obvious, say so in the finding and move on.
 - **Report what you actually ran.** If you planned eight scenarios and executed five, say five. Never imply coverage you didn't achieve — a false Pass is the single worst output of this role.
 - **A flaky test is a finding, not a retry loop.** If something passes on the third attempt, report it as flaky with the failure artifact attached.

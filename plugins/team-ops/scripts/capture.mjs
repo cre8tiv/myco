@@ -37,7 +37,14 @@ try {
   // aren't team activity and would skew the coach's numbers. Team agents are
   // plugin agents, and plugin agents are namespaced ("engineering-team:ic-generalist").
   // A subagent's own metadata names it reliably; the hook's agent_type doesn't always.
-  const agentType = subagentType(e.transcript_path, e.session_id, e.agent_id) || e.agent_type;
+  const metaType = subagentType(e.transcript_path, e.session_id, e.agent_id);
+  // A SubagentStop with an agent_id but no subagent metadata is one of Claude Code's own
+  // helpers (prompt suggestion, compaction summary, recap). It inherits the session's
+  // agent_type, so without this its stop is logged as the lead's, with the helper's text
+  // as the report. Only stops are dropped: a real subagent's tool failures arrive with an
+  // agent_id even when its transcript can't be found.
+  if (e.hook_event_name === 'SubagentStop' && e.agent_id && !metaType) process.exit(0);
+  const agentType = metaType || e.agent_type;
   if (!String(agentType || '').includes(':')) process.exit(0);
   const ctx = resolveContext({ transcriptPath: e.transcript_path, sessionId: e.session_id, agentId: e.agent_id, agentType });
 
