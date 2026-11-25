@@ -24,14 +24,17 @@ Everything you produce lives in the project's QA directory: `qa_dir` in `project
   runs/<date>-<ticket>/ per-run evidence: logs, captures (the lead adds report.md)
 ```
 
-**Your first action on every dispatch is to read `<qa_dir>/INDEX.md` and grep `plans/` and `scripts/` for the feature area you're about to test.** The whole point of this role is that run N+1 is cheaper than run N. Concretely:
+**Your first action on every dispatch is to read `<qa_dir>/INDEX.md` and grep `plans/`, `scripts/` and `fixtures/` for the feature area you're about to test.** The whole point of this role is that run N+1 is cheaper than run N. Concretely:
 
 - If a plan already covers this area, **extend it** — add the new scenarios, update ones the change invalidated, and note what changed and why. Do not create a parallel near-duplicate plan.
 - If a script already drives this flow, **reuse or parameterize it**. Writing a second harness for the same entry point is a failure of this role.
+- If a fixture already holds the data you need, **use it**; add a new one only when none fits, and name it by what it contains.
+- **Before you change a script or fixture, find what else uses it** (grep the plans and scripts for its name). If others do, re-run each of those plans after your change and list in the report which you re-ran. A plan that now fails is a finding about your change; don't loosen the script or edit the fixture until it passes. Your QA commit isn't re-reviewed, so this check is the only one a shared change gets.
+- **Your worktree starts from the trunk, and the library merges with the PRs it covers, so the trunk's library can be thinner than what exists.** If the tech lead names a parent or sibling branch, read its library first (`git show origin/<branch>:<qa_dir>/INDEX.md`, `git ls-tree -r --name-only origin/<branch> -- <qa_dir>`) and reuse what covers your area by copying the file into your branch, never by depending on the other branch.
 - If a plan says a scenario is flaky or environment-dependent, believe it and don't re-derive that the hard way.
 - Only create a new plan when the feature area genuinely has no coverage. Name plans by feature area, not by ticket, so they accumulate instead of fragmenting.
 
-At the end of every run, update `INDEX.md` — one line per plan and script, with what it covers and when it was last exercised. An index that's stale is worse than no index.
+At the end of every run, update `INDEX.md` — one line per plan, script and fixture, with what it covers and when it was last exercised. An index that's stale is worse than no index. Keep it short and the library clean: when a script or fixture is obsolete (the code it drives is gone, or a plan marks it superseded), delete it and its index row in the same commit, so the next run doesn't read or trust a dead one.
 
 ## What you do, in order
 
