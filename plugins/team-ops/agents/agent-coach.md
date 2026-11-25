@@ -42,7 +42,7 @@ Analyze a team only if it has activity in the window. For a team not listed here
 **Engineering** (`engineering-team:*`):
 
 - `code-reviewer` verdicts — the Request-changes rate, and whether the same reason recurs.
-- `qa-specialist` verdicts in `.claude/qa/runs/` — the Fail rate, and failures a reviewer should have caught.
+- `qa-specialist` verdicts in the project's QA directory (`qa_dir` in `project.md`, `.claude/qa` by default), under `runs/` — the Fail rate, and failures a reviewer should have caught.
 - Compaction mid-task, which usually means a task was scoped too large.
 
 **Design** (`design-team:*`) — its outcomes are in the packages themselves, under the `packages_dir` named in `.claude/team/design.md`:

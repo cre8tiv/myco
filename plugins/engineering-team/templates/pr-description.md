@@ -41,7 +41,7 @@ more than half of it.>
 
 | Part | Lines added | What it is |
 | --- | --- | --- |
-| `.claude/qa/` | <n> | QA plans, scripts and reports. Not for line-by-line review. |
+| QA directory (`qa_dir`) | <n> | QA plans, scripts and reports. Not for line-by-line review. |
 | Tests | <n> | <kind of tests> |
 | <production path> | <n> | <what it does. Say if it is a copy of another part.> |
 | Generated or config files | <n> | <what they are and why they changed> |
@@ -65,7 +65,7 @@ Suggested order:
 ## Testing
 
 - <Test counts, only the ones you ran or read from CI on this head.>
-- QA runs, with verdicts: `<path under .claude/qa/runs/>`: <Pass, Fail, or Pass with caveats>, <what was found and fixed>.
+- QA runs, with verdicts: `<path under <qa_dir>/runs/>`: <Pass, Fail, or Pass with caveats>, <what was found and fixed>.
 - <What is not covered live, and what covers it instead.>
 - Steps for a human to check the change are in the ticket's validation field.
 

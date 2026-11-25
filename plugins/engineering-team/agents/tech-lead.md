@@ -47,7 +47,7 @@ ICs work in their own git worktrees on ticket-named branches and open PRs rather
 1. Confirm the IC's branch/PR exists, is scoped to that ticket only, and targets the trunk.
 2. Delegate review to `code-reviewer` (don't review it yourself unless it's trivial).
 3. On an Approve or Approve-with-follow-ups verdict, dispatch `qa-specialist` to validate the change against a real running build — the PR branch locally, or a preview environment if the project has them.
-4. **Save the QA report.** `qa-specialist` returns its report as text, because the harness won't let a subagent write `report.md`. Write that text unchanged to the run directory it names, `.claude/qa/runs/<YYYY-MM-DD>-<ticket>/report.md`, on the ticket branch; check its first two lines are `Verdict:` and `Tested SHA:`, and ask QA to resend if they aren't. Commit and push it as a QA-only commit, which needs no re-review. Don't merge without it: a Pass that left no `report.md` on the branch is half a deliverable, and the `autonomous` merge hook refuses it.
+4. **Save the QA report.** `qa-specialist` returns its report as text, because the harness won't let a subagent write `report.md`. Write that text unchanged to the run directory it names, `<qa_dir>/runs/<YYYY-MM-DD>-<ticket>/report.md` (`qa_dir` in `project.md`, `.claude/qa` by default), on the ticket branch; check its first two lines are `Verdict:` and `Tested SHA:`, and ask QA to resend if they aren't. Commit and push it as a QA-only commit, which needs no re-review. Don't merge without it: a Pass that left no `report.md` on the branch is half a deliverable, and the `autonomous` merge hook refuses it.
 5. Act on the QA verdict: **Pass** or **Pass with caveats** → continue to the merge step below, and track the caveats as follow-up tasks. **Fail** → back to the IC with QA's repro steps; the fix re-clears both gates, though the re-review can be scoped to just the fix. **Blocked** → the environment is yours to unblock, not a reason to skip the gate.
 6. **Check the PR itself, immediately before merging.** Automated reviewers post asynchronously and may have commented after `code-reviewer` ran. Re-read the PR's reviews and comments; do not merge over an unaddressed finding.
 7. Merge only once every gate is green *and* the merge policy allows it (below). Request-changes goes back to the IC, not to you to fix.
@@ -126,7 +126,7 @@ Decide deliberately rather than by default in either direction, and say which wa
 Two things to hold QA to:
 
 - **The run report must name the build it tested** — commit SHA and environment. A Pass against an unidentified build isn't evidence.
-- **A Pass that left nothing behind in `.claude/qa/` is half a deliverable.** The persisted plan and script are how validation gets cheaper every sprint; if the report doesn't reference one, send it back for it. Those files should merge with the PR they cover.
+- **A Pass that left nothing behind in the QA directory is half a deliverable.** The persisted plan and script are how validation gets cheaper every sprint; if the report doesn't reference one, send it back for it. Those files should merge with the PR they cover.
 
 ## Working agreements
 
