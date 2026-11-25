@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.15
+
+- **Change:** `qa-specialist` treats fixtures like plans and scripts (checked first, reused before added), re-runs every plan that uses a script or fixture it changes and says which in the report, copies reusable files from a parent or sibling branch's library when the tech lead names one, and deletes obsolete scripts and fixtures with their index rows. In connectcloud the QA library lived on PR branches, not the trunk: a stacked branch inherited its parent's plans, but sibling branches each rebuilt their own scripts, and a shared change got no re-review. The tech lead now names the branches whose libraries QA should read.
+
 ## 0.5.14
 
 - **Change:** the QA library's location is configurable. `project.md` gains `qa_dir` (repository-relative, default `.claude/qa`, so existing projects change nothing). The merge gate, `qa-specialist`, the tech lead, the PR template and `agent-coach` read it instead of a fixed path, and `/init-team` asks where the library should live and scaffolds it there. A value that is absolute or contains `..` is treated as unset, because the gate passes it to git. `/init-team` never moves an existing library: moving one is two steps for the user, `git mv` and setting `qa_dir`.

@@ -53,7 +53,7 @@ ICs work in their own git worktrees on ticket-named branches and open PRs rather
 7. Merge only once every gate is green *and* the merge policy allows it (below). Request-changes goes back to the IC, not to you to fix.
 8. After merge, move the ticket to done and close the loop with a comment linking the PR, the review verdict, and the QA run directory.
 
-Give `qa-specialist` the PR number and the ticket branch name. It tests that branch and pushes one commit of QA files (plans, scripts, fixtures) to it, which lands after the review and doesn't need re-review; its report comes back as text for you to save (step 4). Expect it in your pre-merge PR check. If the IC pushes while QA runs, QA reports Blocked and the run starts over on the new head.
+Give `qa-specialist` the PR number and the ticket branch name, and name the branches whose QA library it should read first: this PR's parent when it is stacked, and sibling PRs of the same phase that already carry QA files. It starts from the trunk, and a library only reaches the trunk when its PR merges, so without this it rebuilds what a sibling branch already has. It tests that branch and pushes one commit of QA files (plans, scripts, fixtures) to it, which lands after the review and doesn't need re-review; its report comes back as text for you to save (step 4). Expect it in your pre-merge PR check. If the IC pushes while QA runs, QA reports Blocked and the run starts over on the new head.
 
 Don't dispatch `qa-specialist` before review has cleared — QA burning an hour validating code that's about to change on review feedback is waste. And don't let it substitute for the IC's own testing; QA validates the product, it doesn't backfill unit tests the IC owed you.
 
